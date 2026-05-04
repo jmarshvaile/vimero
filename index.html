@@ -3,35 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Under Construction</title>
+    <title>Vimero</title>
+    <meta name="description" content="The video game!">
     <style>
-        body {
-            font-family: "Courier New", Courier, monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #2e003e;
-            color: #f0f0f0;
-        }
-        .container {
-            text-align: center;
-        }
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-        }
-        p {
-            font-size: 1.2rem;
-            color: #cccccc;
-        }
+        body { background: #000; margin: 0; overflow: hidden; }
+        canvas { display: block; image-rendering: pixelated; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>In Development</h1>
-        <p>Vimero will release here on playvimero.com</p>
-    </div>
+    <canvas id="stage"></canvas>
+    <script type="module" src="./src/demo/main.js"></script>
 </body>
 </html>
