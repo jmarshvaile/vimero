@@ -50,7 +50,7 @@ function fillScreen() {
     });
 
     // Spawn ball entities for stress testing
-    const numBalls = 20;
+    const numBalls = 2;
     for (let i = 0; i < numBalls; i++) {
         const id = engine.insert();
         // Include FULL_MASK and the new ball components
