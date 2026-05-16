@@ -1,10 +1,10 @@
-import { POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE } from '../storage/components.js';
+import { POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE, IS_BALL } from '../storage/components.js';
 
 export class RippleSystem {
     constructor(engine, inputSystem) {
         this.engine = engine;
         this.input = inputSystem;
-        this.view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE]);
+        this.view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE], [IS_BALL]);
     }
 
     triggerCircle(ox, oy, sourceWidth, sourceHeight) {
@@ -33,6 +33,15 @@ export class RippleSystem {
     }
 
     update() {
+        // Trigger rare random ripples (e.g., 1% chance per update)
+        if (Math.random() > 0.99) {
+            const screenWidth = window.innerWidth;
+            const screenHeight = window.innerHeight;
+            const rx = Math.floor(Math.random() * screenWidth);
+            const ry = Math.floor(Math.random() * screenHeight);
+            this.triggerCircle(rx, ry, 20, 20); // Using 20 as an approximate size
+        }
+
         this.view.fetch((count, columns) => {
             const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3],
                   lft = columns[4], rip = columns[5], lck = columns[6], size = columns[7];
