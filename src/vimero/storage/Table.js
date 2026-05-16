@@ -18,12 +18,41 @@ export class Table {
         this.count = 0;
         this.columnIndex = new Int32Array(32).fill(-1); // Secondary index for O(1) offsets.
 
+        this.pageCapacity = 10000;
+
         let rowStride = 0;
+        if (columns.length > 0) {
+            // First we need to find exactly how much space one row takes,
+            // but we also need to account for alignment padding when calculating max capacity.
+            // Since padding depends on capacity, we do a binary search or linear probe.
+            // A simple linear probe down from max possible is fast enough.
+            let maxTheoretical = Math.floor(PAGE_SIZE / (Uint32Array.BYTES_PER_ELEMENT + columns.reduce((acc, col) => acc + (col.size * col.ArrayType.BYTES_PER_ELEMENT), 0)));
+
+            for (let cap = maxTheoretical; cap >= 1; cap--) {
+                let offset = cap * Uint32Array.BYTES_PER_ELEMENT; // Start after IDs block
+                let valid = true;
+                for (let i = 0; i < columns.length; i++) {
+                    const col = columns[i];
+                    const padding = offset % col.ArrayType.BYTES_PER_ELEMENT;
+                    if (padding !== 0) {
+                        offset += (col.ArrayType.BYTES_PER_ELEMENT - padding);
+                    }
+                    offset += (col.size * col.ArrayType.BYTES_PER_ELEMENT) * cap;
+                    if (offset > PAGE_SIZE) {
+                        valid = false;
+                        break;
+                    }
+                }
+                if (valid) {
+                    this.pageCapacity = cap;
+                    break;
+                }
+            }
+        }
+
         for (let i = 0; i < columns.length; i++) {
             this.columnIndex[columns[i].id] = i;
-            rowStride += columns[i].size * columns[i].ArrayType.BYTES_PER_ELEMENT;
         }
-        this.pageCapacity = rowStride > 0 ? Math.floor(PAGE_SIZE / rowStride) : 10000;
     }
 
     insert(id) {

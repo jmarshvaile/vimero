@@ -11,35 +11,35 @@
 import { Table } from '../storage/Table.js';
 import { View } from '../query/View.js';
 
-const MAX_RECORDS = 1000000;
-
 export class Engine {
-    constructor(schema) {
+    constructor(schema, maxRecords = 1000000) {
         this.schema = schema;
         this.currentTick = 1;
+        this.maxRecords = maxRecords;
 
-        this.registry = new Array(MAX_RECORDS).fill(null); // ID to Table mapping.
-        this.offsets = new Uint32Array(MAX_RECORDS); // ID to Local Row mapping.
-        this.epochs = new Uint32Array(MAX_RECORDS); // Recycled ID safety.
+        this.masks = new Int32Array(maxRecords).fill(0); // ID to bitmask mapping.
+        this.offsets = new Uint32Array(maxRecords); // ID to Local Row mapping.
+        this.epochs = new Uint32Array(maxRecords); // Recycled ID safety.
 
         this.nextFreeId = 0;
-        for (let i = 0; i < MAX_RECORDS - 1; i++) this.offsets[i] = i + 1;
-        this.offsets[MAX_RECORDS - 1] = MAX_RECORDS;
+        for (let i = 0; i < maxRecords - 1; i++) this.offsets[i] = i + 1;
+        this.offsets[maxRecords - 1] = maxRecords;
 
         this.tables = new Map();
         this.views = [];
-        this.journal = new Uint32Array(MAX_RECORDS); // Write-ahead log for mutations.
+        this.journal = new Uint32Array(maxRecords); // Write-ahead log for mutations.
         this.mutationCount = 0;
-        this.targetMasks = new Int32Array(MAX_RECORDS).fill(0);
+        this.targetMasks = new Int32Array(maxRecords).fill(0);
+        this.isMutating = new Uint8Array(maxRecords).fill(0); // 0 = none, 1 = mutated, 2 = deleted
     }
 
     insert() {
-        if (this.nextFreeId === MAX_RECORDS) throw new Error("Capacity exhausted.");
+        if (this.nextFreeId === this.maxRecords) throw new Error("Capacity exhausted.");
         const id = this.nextFreeId;
         this.nextFreeId = this.offsets[id]; // Advance freelist.
 
         this.epochs[id]++;
-        this.registry[id] = null;
+        this.masks[id] = 0;
         return id;
     }
 
@@ -48,17 +48,17 @@ export class Engine {
     }
 
     delete(id) {
-        if (this.targetMasks[id] !== -1) {
-            if (this.targetMasks[id] === 0) this.journal[this.mutationCount++] = id;
-            this.targetMasks[id] = -1; // Flag for terminal drop.
+        if (this.isMutating[id] !== 2) {
+            if (this.isMutating[id] === 0) this.journal[this.mutationCount++] = id;
+            this.isMutating[id] = 2; // Flag for terminal drop.
         }
     }
 
     alter(id, addedMask, removedMask) {
-        if (this.targetMasks[id] === -1) return;
-        if (this.targetMasks[id] === 0) {
-            const currentTable = this.registry[id];
-            this.targetMasks[id] = currentTable ? currentTable.mask : 0;
+        if (this.isMutating[id] === 2) return;
+        if (this.isMutating[id] === 0) {
+            this.targetMasks[id] = this.masks[id];
+            this.isMutating[id] = 1;
             this.journal[this.mutationCount++] = id;
         }
         this.targetMasks[id] = (this.targetMasks[id] | addedMask) & ~removedMask;
@@ -85,23 +85,27 @@ export class Engine {
         this.currentTick++;
         for (let i = 0; i < this.mutationCount; i++) {
             const id = this.journal[i];
-            const targetMask = this.targetMasks[id];
-            const currentMask = this.registry[id] ? this.registry[id].mask : 0;
 
-            if (targetMask === -1) {
+            if (this.isMutating[id] === 2) {
                 this.migrate(id, 0);
                 this.offsets[id] = this.nextFreeId;
                 this.nextFreeId = id;
-            } else if (currentMask !== targetMask) {
-                this.migrate(id, targetMask);
+            } else {
+                const targetMask = this.targetMasks[id];
+                const currentMask = this.masks[id];
+                if (currentMask !== targetMask) {
+                    this.migrate(id, targetMask);
+                }
             }
+            this.isMutating[id] = 0;
             this.targetMasks[id] = 0;
         }
         this.mutationCount = 0;
     }
 
     migrate(id, targetMask) {
-        const sourceTable = this.registry[id];
+        const sourceMask = this.masks[id];
+        const sourceTable = sourceMask !== 0 ? this.tables.get(sourceMask) : null;
         const sourceRow = this.offsets[id];
 
         if (targetMask === 0) {
@@ -111,7 +115,7 @@ export class Engine {
                 targetPage.changedTick = this.currentTick;
                 if (lastPage) lastPage.changedTick = this.currentTick;
             }
-            this.registry[id] = null;
+            this.masks[id] = 0;
             return;
         }
 
@@ -143,7 +147,7 @@ export class Engine {
             if (lastPage) lastPage.changedTick = this.currentTick;
         }
 
-        this.registry[id] = targetTable;
+        this.masks[id] = targetMask;
         this.offsets[id] = dest.row;
     }
 }

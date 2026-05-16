@@ -16,12 +16,24 @@ export class Page {
         this.capacity = capacity;
         this.changedTick = 0;
         this.columns = [];
-        this.ids = new Uint32Array(capacity); // Tracks record IDs per page.
 
-        let offset = 0;
+        // Ensure perfect memory locality: 'ids' directly mapped into the beginning of the page buffer.
+        this.ids = new Uint32Array(this.buffer, 0, capacity);
+
+        let offset = capacity * Uint32Array.BYTES_PER_ELEMENT; // Start offset after the IDs block.
+
         for (let i = 0; i < columns.length; i++) {
             const def = columns[i];
+
+            // Optional: Padding for strict TypedArray alignment based on BYTES_PER_ELEMENT.
+            // This is critical if mixing Float64 or standard arrays.
+            const padding = offset % def.ArrayType.BYTES_PER_ELEMENT;
+            if (padding !== 0) {
+                offset += (def.ArrayType.BYTES_PER_ELEMENT - padding);
+            }
+
             const byteSize = def.size * def.ArrayType.BYTES_PER_ELEMENT;
+
             // Pure SoA layout for CPU SIMD vectorization.
             this.columns.push(new def.ArrayType(this.buffer, offset, capacity * def.size));
             offset += byteSize * capacity;
