@@ -72,8 +72,8 @@ function fillScreen() {
                 pos[i * 2] = Math.floor(Math.random() * (canvas.width / initialCellSize)) * initialCellSize;
                 pos[i * 2 + 1] = Math.floor(Math.random() * (canvas.height / initialCellSize)) * initialCellSize;
 
-                // Bright red color to stand out
-                bg[i * 4] = 255; bg[i * 4 + 1] = 0; bg[i * 4 + 2] = 0; bg[i * 4 + 3] = 255;
+                // Use base background color to hide the background
+                bg[i * 4] = 5; bg[i * 4 + 1] = 0; bg[i * 4 + 2] = 10; bg[i * 4 + 3] = 255;
                 fg[i * 4] = 255; fg[i * 4 + 1] = 255; fg[i * 4 + 2] = 255; fg[i * 4 + 3] = 255;
 
                 gly[i] = 79; // ASCII for 'O'

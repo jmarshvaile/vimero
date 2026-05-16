@@ -84,10 +84,6 @@ export class BallSystem {
                     nextY = currentY;
                 }
 
-                if (bounceX || bounceY) {
-                    this.rippleSystem.triggerCircle(currentX, currentY, bw, bh);
-                }
-
                 bPos[i * 2] = nextX;
                 bPos[i * 2 + 1] = nextY;
             }
