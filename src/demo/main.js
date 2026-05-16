@@ -4,12 +4,14 @@ import { InputSystem } from './systems/InputSystem.js';
 import { RippleSystem } from './systems/RippleSystem.js';
 import { RenderSystem } from './systems/RenderSystem.js';
 import { BallSystem } from './systems/BallSystem.js';
+import { FadeSystem } from './systems/FadeSystem.js';
 
 const canvas = document.getElementById('stage');
 
 const engine = new Engine(schema);
 const inputSystem = new InputSystem();
 const rippleSystem = new RippleSystem(engine, inputSystem);
+const fadeSystem = new FadeSystem(engine);
 const renderSystem = new RenderSystem(engine, canvas);
 const ballSystem = new BallSystem(engine, canvas, rippleSystem);
 
@@ -101,6 +103,7 @@ function loop() {
     engine.currentTick++;
     ballSystem.update();
     rippleSystem.update();
+    fadeSystem.update();
     renderSystem.render();
     requestAnimationFrame(loop);
 }
