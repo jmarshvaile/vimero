@@ -107,4 +107,13 @@ function loop() {
 
 loop();
 
-window.addEventListener('resize', () => location.reload());
+let lastWidth = window.innerWidth;
+let lastHeight = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    if (window.innerWidth !== lastWidth || window.innerHeight !== lastHeight) {
+        lastWidth = window.innerWidth;
+        lastHeight = window.innerHeight;
+        location.reload();
+    }
+});
