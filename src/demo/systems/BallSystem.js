@@ -6,7 +6,7 @@ export class BallSystem {
         this.canvas = canvas;
         this.rippleSystem = rippleSystem;
         this.ballView = engine.view([POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, LIFETIME, RIPPLE_DELAY]);
+        this.gridView = engine.view([POS, SIZE, LIFETIME, RIPPLE_DELAY], [IS_BALL]);
 
         // Single TypedArray to hold [bounceX, bounceY] to avoid GC allocations in the hot path
         this._collisionState = new Uint8Array(2);
@@ -77,14 +77,9 @@ export class BallSystem {
             this._checkGridCollision(nextX, nextY, currentX, currentY, bw, bh);
         }
 
-        // Preserve one direction of motion if it's a simple reverse
-        if (this._collisionState[0] === 1 && this._collisionState[1] === 1) {
-            if (Math.random() > 0.5) {
-                this._collisionState[0] = 0;
-            } else {
-                this._collisionState[1] = 0;
-            }
-        }
+
+
+
 
         if (this._collisionState[0] === 1) {
             bVel[i * 2] *= -1;
