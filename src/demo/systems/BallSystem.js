@@ -1,4 +1,4 @@
-import { POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE, LIFETIME } from '../storage/components.js';
+import { POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE, LIFETIME, RIPPLE_DELAY } from '../storage/components.js';
 
 export class BallSystem {
     constructor(engine, canvas, rippleSystem) {
@@ -6,7 +6,7 @@ export class BallSystem {
         this.canvas = canvas;
         this.rippleSystem = rippleSystem;
         this.ballView = engine.view([POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, LIFETIME]);
+        this.gridView = engine.view([POS, SIZE, LIFETIME, RIPPLE_DELAY]);
 
         // Single TypedArray to hold [bounceX, bounceY] to avoid GC allocations in the hot path
         this._collisionState = new Uint8Array(2);
@@ -30,10 +30,10 @@ export class BallSystem {
 
     _checkGridCollision(nextX, nextY, currentX, currentY, bw, bh) {
         this.gridView.fetch((gCount, gColumns) => {
-            const gPos = gColumns[0], gSize = gColumns[1], gLifetime = gColumns[2];
+            const gPos = gColumns[0], gSize = gColumns[1], gLifetime = gColumns[2], gRippleDelay = gColumns[3];
             for (let j = 0; j < gCount; j++) {
-                // If lifetime is 0, the cell has begun fading and loses collision
-                if (gLifetime[j] === 0) continue;
+                // If lifetime is 0 and ripple delay is 0, the cell has begun fading and loses collision
+                if (gLifetime[j] === 0 && gRippleDelay[j] === 0) continue;
 
                 const gx = gPos[j * 2];
                 const gy = gPos[j * 2 + 1];
