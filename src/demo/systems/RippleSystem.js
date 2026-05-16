@@ -1,29 +1,31 @@
-import { POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK } from '../storage/components.js';
+import { POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE } from '../storage/components.js';
 
 export class RippleSystem {
-    constructor(engine, inputSystem, cellSize) {
+    constructor(engine, inputSystem) {
         this.engine = engine;
         this.input = inputSystem;
-        this.cellSize = cellSize;
-        this.view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK]);
+        this.view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, RIPPLE_DELAY, MOUSE_LOCK, SIZE]);
     }
 
-    triggerCircle(ox, oy) {
-        const centerX = ox + (this.cellSize / 2);
-        const centerY = oy + (this.cellSize / 2);
-        const radius = this.cellSize * 4;
+    triggerCircle(ox, oy, sourceWidth, sourceHeight) {
+        const centerX = ox + (sourceWidth / 2);
+        const centerY = oy + (sourceHeight / 2);
+        const radius = Math.max(sourceWidth, sourceHeight) * 4;
 
         this.view.fetch((count, columns) => {
-            const pos = columns[0], rip = columns[5], lck = columns[6];
+            const pos = columns[0], rip = columns[5], lck = columns[6], size = columns[7];
 
             for (let i = 0; i < count; i++) {
                 if (lck[i] === 1) continue;
-                const dx = (pos[i * 2] + this.cellSize / 2) - centerX;
-                const dy = (pos[i * 2 + 1] + this.cellSize / 2) - centerY;
+                const width = size[i * 2];
+                const height = size[i * 2 + 1];
+                const dx = (pos[i * 2] + width / 2) - centerX;
+                const dy = (pos[i * 2 + 1] + height / 2) - centerY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
+                const threshold = Math.max(width, height) / 2;
                 if (dist < radius) {
-                    rip[i] = dist < this.cellSize / 2 ? 1 : 4 + Math.floor(dist / 4);
+                    rip[i] = dist < threshold ? 1 : 4 + Math.floor(dist / 4);
                     lck[i] = 1;
                 }
             }
@@ -33,16 +35,18 @@ export class RippleSystem {
     update() {
         this.view.fetch((count, columns) => {
             const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3],
-                  lft = columns[4], rip = columns[5], lck = columns[6];
+                  lft = columns[4], rip = columns[5], lck = columns[6], size = columns[7];
 
             for (let i = 0; i < count; i++) {
                 const idx = i * 4;
                 const x = pos[i * 2], y = pos[i * 2 + 1];
-                const isOver = this.input.mouseX >= x && this.input.mouseX < x + this.cellSize &&
-                               this.input.mouseY >= y && this.input.mouseY < y + this.cellSize;
+                const width = size[i * 2], height = size[i * 2 + 1];
+
+                const isOver = this.input.mouseX >= x && this.input.mouseX < x + width &&
+                               this.input.mouseY >= y && this.input.mouseY < y + height;
 
                 if (!isOver && lck[i] === 1 && rip[i] === 0) lck[i] = 0;
-                if (isOver && lck[i] === 0) this.triggerCircle(x, y);
+                if (isOver && lck[i] === 0) this.triggerCircle(x, y, width, height);
 
                 if (rip[i] > 0) {
                     rip[i]--;
