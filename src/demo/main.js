@@ -61,6 +61,7 @@ function fillScreen() {
     engine.commit();
 
     // Initialize the balls
+    let ballInitCount = 0;
     const ballInitView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, BALL_TIMER, IS_BALL]);
     ballInitView.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
@@ -86,8 +87,16 @@ function fillScreen() {
                 glyFam[i] = 0;
 
                 // Velocity in terms of grid cells
-                const vx = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
-                const vy = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
+                let vx, vy;
+                if (ballInitCount === 0) {
+                    vx = 0;
+                    vy = initialCellSize;
+                } else {
+                    vx = initialCellSize;
+                    vy = 0;
+                }
+                ballInitCount++;
+
                 vel[i * 2] = vx;
                 vel[i * 2 + 1] = vy;
 
