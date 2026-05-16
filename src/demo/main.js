@@ -1,8 +1,9 @@
 import { Engine } from '../vimero/index.js';
-import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY } from './storage/components.js';
+import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, BALL_TIMER, IS_BALL } from './storage/components.js';
 import { InputSystem } from './systems/InputSystem.js';
 import { RippleSystem } from './systems/RippleSystem.js';
 import { RenderSystem } from './systems/RenderSystem.js';
+import { BallSystem } from './systems/BallSystem.js';
 
 const canvas = document.getElementById('stage');
 
@@ -10,11 +11,13 @@ const engine = new Engine(schema);
 const inputSystem = new InputSystem();
 const rippleSystem = new RippleSystem(engine, inputSystem);
 const renderSystem = new RenderSystem(engine, canvas);
+const ballSystem = new BallSystem(engine, canvas, rippleSystem);
+
+const initialCellSize = 20;
 
 function fillScreen() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    const initialCellSize = 20;
     const cols = Math.ceil(canvas.width / initialCellSize);
     const rows = Math.ceil(canvas.height / initialCellSize);
     const total = cols * rows;
@@ -45,12 +48,58 @@ function fillScreen() {
             entityIndex++;
         }
     });
+
+    // Spawn ball entities for stress testing
+    const numBalls = 20;
+    for (let i = 0; i < numBalls; i++) {
+        const id = engine.insert();
+        // Include FULL_MASK and the new ball components
+        engine.alter(id, FULL_MASK | VELOCITY | BALL_TIMER | IS_BALL, 0);
+    }
+    engine.commit();
+
+    // Initialize the balls
+    const ballInitView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, BALL_TIMER, IS_BALL]);
+    ballInitView.fetch((count, columns) => {
+        const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
+        const size = columns[4], glySize = columns[5], glyFam = columns[6];
+        const vel = columns[7], timer = columns[8], isBall = columns[9];
+
+        for (let i = 0; i < count; i++) {
+            if (isBall[i] === 0) { // Only initialize the ones we just added which have IS_BALL flag
+                isBall[i] = 1;
+
+                pos[i * 2] = Math.floor(Math.random() * (canvas.width / initialCellSize)) * initialCellSize;
+                pos[i * 2 + 1] = Math.floor(Math.random() * (canvas.height / initialCellSize)) * initialCellSize;
+
+                // Bright red color to stand out
+                bg[i * 4] = 255; bg[i * 4 + 1] = 0; bg[i * 4 + 2] = 0; bg[i * 4 + 3] = 255;
+                fg[i * 4] = 255; fg[i * 4 + 1] = 255; fg[i * 4 + 2] = 255; fg[i * 4 + 3] = 255;
+
+                gly[i] = 79; // ASCII for 'O'
+
+                size[i * 2] = initialCellSize;
+                size[i * 2 + 1] = initialCellSize;
+                glySize[i] = initialCellSize * 0.9;
+                glyFam[i] = 0;
+
+                // Velocity in terms of grid cells
+                const vx = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
+                const vy = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
+                vel[i * 2] = vx;
+                vel[i * 2 + 1] = vy;
+
+                timer[i] = 0;
+            }
+        }
+    });
 }
 
 fillScreen();
 
 function loop() {
     engine.currentTick++;
+    ballSystem.update();
     rippleSystem.update();
     renderSystem.render();
     requestAnimationFrame(loop);
