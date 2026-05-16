@@ -21,7 +21,7 @@ export class BallSystem {
                     continue;
                 }
 
-                bTimer[i] = 5; // Movement cooldown ticks
+                bTimer[i] = 11; // Movement cooldown ticks
 
                 const currentX = bPos[i * 2];
                 const currentY = bPos[i * 2 + 1];
