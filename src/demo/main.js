@@ -52,7 +52,7 @@ function fillScreen() {
     });
 
     // Spawn ball entities for stress testing
-    const numBalls = 2;
+    const numBalls = 4;
     for (let i = 0; i < numBalls; i++) {
         const id = engine.insert();
         // Include FULL_MASK and the new ball components
@@ -88,12 +88,15 @@ function fillScreen() {
 
                 // Velocity in terms of grid cells
                 let vx, vy;
-                if (ballInitCount === 0) {
-                    vx = 0;
-                    vy = initialCellSize;
-                } else {
+                if (ballInitCount < 2) {
+                    vx = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
+                    vy = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
+                } else if (ballInitCount === 2) {
                     vx = initialCellSize;
                     vy = 0;
+                } else {
+                    vx = 0;
+                    vy = initialCellSize;
                 }
                 ballInitCount++;
 
