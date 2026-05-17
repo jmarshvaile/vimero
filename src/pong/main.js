@@ -47,7 +47,7 @@ function spawnMovingCell() {
             // Find the newly spawned cell that hasn't been initialized (size is 0)
             if (size[i * 2] === 0 && size[i * 2 + 1] === 0) {
                 // Spawn at top, random X within grid
-                const cols = Math.ceil(canvas.width / initialCellSize);
+                const cols = Math.ceil(canvas.logicalWidth / initialCellSize);
                 const spawnCol = Math.floor(Math.random() * cols);
 
                 pos[i * 2] = spawnCol * initialCellSize;
@@ -91,10 +91,10 @@ function maintainMovingCell() {
         for (let i = 0; i < count; i++) {
             if (vel[i * 2] !== 0 || vel[i * 2 + 1] !== 0) {
                 const y = pos[i * 2 + 1];
-                if (y < 0 || y >= canvas.height) { // If went off top or bottom bounds
+                if (y < 0 || y >= canvas.logicalHeight) { // If went off top or bottom bounds
                     needsRespawn = true;
                     // Reset its position to essentially reuse it
-                    pos[i * 2] = Math.floor(Math.random() * Math.ceil(canvas.width / initialCellSize)) * initialCellSize;
+                    pos[i * 2] = Math.floor(Math.random() * Math.ceil(canvas.logicalWidth / initialCellSize)) * initialCellSize;
                     pos[i * 2 + 1] = 0;
 
                     // Reset velocity
@@ -117,10 +117,16 @@ function maintainMovingCell() {
 }
 
 function fillScreen() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const cols = Math.ceil(canvas.width / initialCellSize);
-    const rows = Math.ceil(canvas.height / initialCellSize);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    canvas.logicalWidth = window.innerWidth;
+    canvas.logicalHeight = window.innerHeight;
+
+    const cols = Math.ceil(canvas.logicalWidth / initialCellSize);
+    const rows = Math.ceil(canvas.logicalHeight / initialCellSize);
     const total = cols * rows;
 
     for (let i = 0; i < total; i++) {

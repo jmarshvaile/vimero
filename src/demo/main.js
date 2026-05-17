@@ -18,10 +18,16 @@ const ballSystem = new BallSystem(engine, canvas, rippleSystem);
 const initialCellSize = 20;
 
 function fillScreen() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    const cols = Math.ceil(canvas.width / initialCellSize);
-    const rows = Math.ceil(canvas.height / initialCellSize);
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    canvas.logicalWidth = window.innerWidth;
+    canvas.logicalHeight = window.innerHeight;
+
+    const cols = Math.ceil(canvas.logicalWidth / initialCellSize);
+    const rows = Math.ceil(canvas.logicalHeight / initialCellSize);
     const total = cols * rows;
 
     for (let i = 0; i < total; i++) {
@@ -72,8 +78,8 @@ function fillScreen() {
             if (isBall[i] === 0) { // Only initialize the ones we just added which have IS_BALL flag
                 isBall[i] = 1;
 
-                pos[i * 2] = Math.floor(Math.random() * (canvas.width / initialCellSize)) * initialCellSize;
-                pos[i * 2 + 1] = Math.floor(Math.random() * (canvas.height / initialCellSize)) * initialCellSize;
+                pos[i * 2] = Math.floor(Math.random() * (canvas.logicalWidth / initialCellSize)) * initialCellSize;
+                pos[i * 2 + 1] = Math.floor(Math.random() * (canvas.logicalHeight / initialCellSize)) * initialCellSize;
 
                 // Use base background color to hide the background
                 bg[i * 4] = 5; bg[i * 4 + 1] = 0; bg[i * 4 + 2] = 10; bg[i * 4 + 3] = 255;

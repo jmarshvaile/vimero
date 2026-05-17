@@ -39,13 +39,13 @@ export class MotionCollisionSystem {
                 let isDestroyed = false;
 
                 // Screen bounds collision
-                if (nextX < 0 || nextX + bw > this.canvas.width) {
+                if (nextX < 0 || nextX + bw > this.canvas.logicalWidth) {
                     bounceX = true;
                     nextX = currentX;
                 }
 
                 // Despawn on top/bottom bounds
-                if (nextY < 0 || nextY + bh > this.canvas.height) {
+                if (nextY < 0 || nextY + bh > this.canvas.logicalHeight) {
                     isDestroyed = true;
                 }
 
