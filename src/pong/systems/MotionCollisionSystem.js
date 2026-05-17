@@ -5,6 +5,7 @@ export class MotionCollisionSystem {
         this.engine = engine;
         this.canvas = canvas;
         this.view = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, DRAG_OFFSET]);
+        this.gridView = engine.view([POS, VELOCITY, SIZE, ACTIVE, DRAG_OFFSET]);
     }
 
     update() {
@@ -51,32 +52,39 @@ export class MotionCollisionSystem {
                 // Grid collision
                 if (!bounceX && !bounceY && !isDestroyed) {
                     // We need to iterate over all other cells in the same view to check for collision with static active cells
-                    for (let j = 0; j < count; j++) {
-                        if (i === j) continue; // Skip self
+                    let hitFound = false;
+                    this.gridView.fetch((gCount, gColumns) => {
+                        if (hitFound) return;
 
-                        // We only collide with active cells that are NOT moving
-                        if (active[j] === 0 || vel[j * 2] !== 0 || vel[j * 2 + 1] !== 0) continue;
+                        const gPos = gColumns[0], gVel = gColumns[1], gSize = gColumns[2], gActive = gColumns[3], gDragOffset = gColumns[4];
 
-                        const gx = pos[j * 2];
-                        const gy = pos[j * 2 + 1];
-                        const gw = size[j * 2];
-                        const gh = size[j * 2 + 1];
+                        for (let j = 0; j < gCount; j++) {
+                            // We only collide with active cells that are NOT moving
+                            // Since moving cell has velocity, checking gVel === 0 naturally excludes self
+                            if (gActive[j] === 0 || gVel[j * 2] !== 0 || gVel[j * 2 + 1] !== 0) continue;
 
-                        if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
-                            bounceY = true;
-                            bounceX = false;
-                            const hitOffset = dragOffset[j];
-                            const speed = bw; // we assume bw is the step size which is true for cells
-                            if (hitOffset < 0) {
-                                vel[i * 2] = Math.max(-speed, vx - speed);
-                            } else if (hitOffset > 0) {
-                                vel[i * 2] = Math.min(speed, vx + speed);
-                            } else {
-                                vel[i * 2] = 0;
+                            const gx = gPos[j * 2];
+                            const gy = gPos[j * 2 + 1];
+                            const gw = gSize[j * 2];
+                            const gh = gSize[j * 2 + 1];
+
+                            if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
+                                bounceY = true;
+                                bounceX = false;
+                                const hitOffset = gDragOffset[j];
+                                const speed = bw; // we assume bw is the step size which is true for cells
+                                if (hitOffset < 0) {
+                                    vel[i * 2] = Math.max(-speed, vx - speed);
+                                } else if (hitOffset > 0) {
+                                    vel[i * 2] = Math.min(speed, vx + speed);
+                                } else {
+                                    vel[i * 2] = 0;
+                                }
+                                hitFound = true;
+                                break; // Stop checking after one hit in this page
                             }
-                            break; // Stop checking after one hit
                         }
-                    }
+                    });
                 }
 
                 if (bounceX) {
