@@ -31,7 +31,11 @@ export class Render {
                 const height = size[i * 2 + 1];
 
                 this.ctx.fillStyle = `rgb(${bg[idx]},${bg[idx+1]},${bg[idx+2]})`;
-                this.ctx.fillRect(pos[i * 2], pos[i * 2 + 1], width + 1, height + 1);
+                const px = Math.round(pos[i * 2] * dpr) / dpr;
+                const py = Math.round(pos[i * 2 + 1] * dpr) / dpr;
+                const pw = Math.round((pos[i * 2] + width) * dpr) / dpr - px;
+                const ph = Math.round((pos[i * 2 + 1] + height) * dpr) / dpr - py;
+                this.ctx.fillRect(px, py, pw, ph);
 
                 const fontFamily = FONT_FAMILIES[glyFam[i]] || 'monospace';
                 this.ctx.font = `bold ${glySize[i]}px ${fontFamily}`;
