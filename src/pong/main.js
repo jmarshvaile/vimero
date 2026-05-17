@@ -1,12 +1,13 @@
 import { Engine } from '../vimero/index.js';
-import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, DRAG_OFFSET } from './storage/components.js';
+import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, SURFACE_DEFLECTION } from './storage/components.js';
 
 import { ClickInputSystem } from './systems/ClickInputSystem.js';
 import { GridActivationSystem } from './systems/GridActivationSystem.js';
-import { AdjacencySystem } from './systems/AdjacencySystem.js';
+import { ContiguousGroupSystem } from './systems/ContiguousGroupSystem.js';
 import { TimerStateSystem } from './systems/TimerStateSystem.js';
 import { ThemeColorSystem } from './systems/ThemeColorSystem.js';
-import { MotionCollisionSystem } from './systems/MotionCollisionSystem.js';
+import { GridMovementSystem } from './systems/GridMovementSystem.js';
+import { BoundaryDespawnSystem } from './systems/BoundaryDespawnSystem.js';
 import { OccupancySystem } from './systems/OccupancySystem.js';
 import { RenderSystem } from './systems/RenderSystem.js';
 
@@ -15,10 +16,11 @@ const canvas = document.getElementById('stage');
 const engine = new Engine(schema);
 const clickInputSystem = new ClickInputSystem(canvas);
 const gridActivationSystem = new GridActivationSystem(engine, clickInputSystem);
-const adjacencySystem = new AdjacencySystem(engine);
+const contiguousGroupSystem = new ContiguousGroupSystem(engine);
 const timerStateSystem = new TimerStateSystem(engine);
 const themeColorSystem = new ThemeColorSystem(engine);
-const motionCollisionSystem = new MotionCollisionSystem(engine, canvas);
+const gridMovementSystem = new GridMovementSystem(engine, canvas);
+const boundaryDespawnSystem = new BoundaryDespawnSystem(engine, canvas);
 const occupancySystem = new OccupancySystem(engine);
 const renderSystem = new RenderSystem(engine, canvas);
 
@@ -34,14 +36,14 @@ function spawnMovingCell() {
     engine.alter(id, FULL_MASK, 0);
     engine.commit();
 
-    const view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, DRAG_OFFSET]);
+    const view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, SURFACE_DEFLECTION]);
 
     view.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
         const size = columns[4], glySize = columns[5], glyFam = columns[6];
         const hidden = columns[7], active = columns[8], timer = columns[9];
         const vel = columns[10], stepTimer = columns[11], stepDelay = columns[12];
-        const dragOffset = columns[13];
+        const surfaceDeflection = columns[13];
 
         for (let i = 0; i < count; i++) {
             // Find the newly spawned cell that hasn't been initialized (size is 0)
@@ -65,7 +67,7 @@ function spawnMovingCell() {
                 hidden[i] = 0;
                 active[i] = 1; // Always active
                 timer[i] = 0; // Not used
-                dragOffset[i] = 0;
+                surfaceDeflection[i] = 0;
 
                 vel[i * 2] = 0;
                 vel[i * 2 + 1] = initialCellSize; // Move down by one cell
@@ -91,14 +93,14 @@ function maintainMovingCell() {
         for (let i = 0; i < count; i++) {
             if (vel[i * 2] !== 0 || vel[i * 2 + 1] !== 0) {
                 const y = pos[i * 2 + 1];
-                if (y < 0 || y >= canvas.logicalHeight) { // If went off top or bottom bounds
+                if (pos[i * 2] === -1000 && pos[i * 2 + 1] === -1000) { // If went off bounds and was despawned
                     needsRespawn = true;
                     // Reset its position to essentially reuse it
                     pos[i * 2] = Math.floor(Math.random() * Math.ceil(canvas.logicalWidth / initialCellSize)) * initialCellSize;
                     pos[i * 2 + 1] = 0;
 
                     // Reset velocity
-                    const fullView = engine.view([VELOCITY, STEP_TIMER], [], engine);
+                    const fullView = engine.view([VELOCITY, STEP_TIMER]);
                     fullView.fetch((fc, fcCols) => {
                         const fv = fcCols[0], fst = fcCols[1];
                         for(let j = 0; j < fc; j++) {
@@ -137,14 +139,14 @@ function fillScreen() {
     }
     engine.commit();
 
-    const initView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, DRAG_OFFSET]);
+    const initView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, SURFACE_DEFLECTION]);
     let entityIndex = 0;
 
     initView.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
         const size = columns[4], glySize = columns[5], glyFam = columns[6];
         const hidden = columns[7], active = columns[8], timer = columns[9];
-        const dragOffset = columns[10];
+        const surfaceDeflection = columns[10];
 
         for (let i = 0; i < count; i++) {
             if (size[i * 2] !== 0 && size[i * 2 + 1] !== 0) continue; // Already initialized
@@ -165,7 +167,7 @@ function fillScreen() {
             hidden[i] = 0;
             active[i] = 0;
             timer[i] = 0;
-            dragOffset[i] = 0;
+            surfaceDeflection[i] = 0;
 
             entityIndex++;
         }
@@ -179,10 +181,11 @@ fillScreen();
 function loop() {
     engine.currentTick++;
     gridActivationSystem.update();
-    adjacencySystem.update();
+    contiguousGroupSystem.update();
     timerStateSystem.update();
     themeColorSystem.update();
-    motionCollisionSystem.update();
+    gridMovementSystem.update();
+    boundaryDespawnSystem.update();
     maintainMovingCell();
     occupancySystem.update();
     renderSystem.render();

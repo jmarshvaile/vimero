@@ -1,12 +1,11 @@
-import { POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE, LIFETIME, RIPPLE_DELAY } from '../storage/components.js';
+import { POS, VELOCITY, STEP_TIMER, IS_MOVER, SIZE, LIFETIME, DELAY } from '../storage/components.js';
 
-export class BallSystem {
-    constructor(engine, canvas, rippleSystem) {
+export class GridMovementSystem {
+    constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
-        this.rippleSystem = rippleSystem;
-        this.ballView = engine.view([POS, VELOCITY, BALL_TIMER, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, LIFETIME, RIPPLE_DELAY], [IS_BALL]);
+        this.moverView = engine.view([POS, VELOCITY, STEP_TIMER, IS_MOVER, SIZE]);
+        this.gridView = engine.view([POS, SIZE, LIFETIME, DELAY], [IS_MOVER]);
 
         // Single TypedArray to hold [bounceX, bounceY] to avoid GC allocations in the hot path
         this._collisionState = new Uint8Array(2);
@@ -30,10 +29,10 @@ export class BallSystem {
 
     _checkGridCollision(nextX, nextY, currentX, currentY, bw, bh) {
         this.gridView.fetch((gCount, gColumns) => {
-            const gPos = gColumns[0], gSize = gColumns[1], gLifetime = gColumns[2], gRippleDelay = gColumns[3];
+            const gPos = gColumns[0], gSize = gColumns[1], gLifetime = gColumns[2], gDelay = gColumns[3];
             for (let j = 0; j < gCount; j++) {
-                // If lifetime is 0 and ripple delay is 0, the cell has begun fading and loses collision
-                if (gLifetime[j] === 0 && gRippleDelay[j] === 0) continue;
+                // If lifetime is 0 and delay is 0, the cell has begun fading and loses collision
+                if (gLifetime[j] === 0 && gDelay[j] === 0) continue;
 
                 const gx = gPos[j * 2];
                 const gy = gPos[j * 2 + 1];
@@ -57,7 +56,7 @@ export class BallSystem {
         });
     }
 
-    _updateBall(bPos, bVel, bSize, i, currentX, currentY, vx, vy) {
+    _updateMover(bPos, bVel, bSize, i, currentX, currentY, vx, vy) {
         const bw = bSize[i * 2];
         const bh = bSize[i * 2 + 1];
 
@@ -77,10 +76,6 @@ export class BallSystem {
             this._checkGridCollision(nextX, nextY, currentX, currentY, bw, bh);
         }
 
-
-
-
-
         if (this._collisionState[0] === 1) {
             bVel[i * 2] *= -1;
             nextX = currentX;
@@ -95,11 +90,11 @@ export class BallSystem {
     }
 
     update() {
-        this.ballView.fetch((bCount, bColumns) => {
-            const bPos = bColumns[0], bVel = bColumns[1], bTimer = bColumns[2], bIsBall = bColumns[3], bSize = bColumns[4];
+        this.moverView.fetch((bCount, bColumns) => {
+            const bPos = bColumns[0], bVel = bColumns[1], bTimer = bColumns[2], bIsMover = bColumns[3], bSize = bColumns[4];
 
             for (let i = 0; i < bCount; i++) {
-                if (bIsBall[i] === 0) continue;
+                if (bIsMover[i] === 0) continue;
 
                 if (bTimer[i] > 0) {
                     bTimer[i]--;
@@ -113,7 +108,7 @@ export class BallSystem {
                 const vx = bVel[i * 2];
                 const vy = bVel[i * 2 + 1];
 
-                this._updateBall(bPos, bVel, bSize, i, currentX, currentY, vx, vy);
+                this._updateMover(bPos, bVel, bSize, i, currentX, currentY, vx, vy);
             }
         });
     }
