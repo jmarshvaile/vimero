@@ -1,50 +1,50 @@
-import { POS, HIDDEN, IS_BALL, IS_GRID, SIZE } from '../storage/components.js';
+import { POS, HIDDEN, SIZE, VELOCITY } from '../storage/components.js';
 
 export class OccupancySystem {
     constructor(engine) {
         this.engine = engine;
-        this.ballView = engine.view([POS, SIZE, IS_BALL]);
-        this.gridView = engine.view([POS, SIZE, HIDDEN, IS_GRID]);
+        this.view = engine.view([POS, SIZE, HIDDEN, VELOCITY]);
     }
 
     update() {
-        // Reset all grid cells to not hidden
-        this.gridView.fetch((count, columns) => {
-            const hidden = columns[2], isGrid = columns[3];
+        // Reset all cells to not hidden initially
+        this.view.fetch((count, columns) => {
+            const hidden = columns[2];
             for (let i = 0; i < count; i++) {
-                if (isGrid[i] === 0) continue;
                 hidden[i] = 0;
             }
         });
 
-        // Hide grid cells that are currently occupied by a ball
-        this.ballView.fetch((bCount, bColumns) => {
-            const bPos = bColumns[0], bSize = bColumns[1], bIsBall = bColumns[2];
+        // Hide static cells that are currently occupied by moving cells
+        this.view.fetch((count, columns) => {
+            const pos = columns[0], size = columns[1], hidden = columns[2], vel = columns[3];
 
-            for (let i = 0; i < bCount; i++) {
-                if (bIsBall[i] === 0) continue;
+            for (let i = 0; i < count; i++) {
+                // If it's a moving cell
+                if (vel[i * 2] !== 0 || vel[i * 2 + 1] !== 0) {
+                    const bx = pos[i * 2];
+                    const by = pos[i * 2 + 1];
+                    const bw = size[i * 2];
+                    const bh = size[i * 2 + 1];
 
-                const bx = bPos[i * 2];
-                const by = bPos[i * 2 + 1];
-                const bw = bSize[i * 2];
-                const bh = bSize[i * 2 + 1];
+                    // Check against static cells
+                    for (let j = 0; j < count; j++) {
+                        if (i === j) continue;
 
-                this.gridView.fetch((gCount, gColumns) => {
-                    const gPos = gColumns[0], gSize = gColumns[1], gHidden = gColumns[2], gIsGrid = gColumns[3];
+                        // We only hide static cells
+                        if (vel[j * 2] !== 0 || vel[j * 2 + 1] !== 0) continue;
 
-                    for (let j = 0; j < gCount; j++) {
-                        if (gIsGrid[j] === 0) continue;
-                        const gx = gPos[j * 2];
-                        const gy = gPos[j * 2 + 1];
-                        const gw = gSize[j * 2];
-                        const gh = gSize[j * 2 + 1];
+                        const gx = pos[j * 2];
+                        const gy = pos[j * 2 + 1];
+                        const gw = size[j * 2];
+                        const gh = size[j * 2 + 1];
 
                         // Simple overlapping bounding box check
                         if (bx < gx + gw && bx + bw > gx && by < gy + gh && by + bh > gy) {
-                            gHidden[j] = 1;
+                            hidden[j] = 1;
                         }
                     }
-                });
+                }
             }
         });
     }
