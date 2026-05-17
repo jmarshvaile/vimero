@@ -1,0 +1,19 @@
+import { Schema } from '../../vimero/index.js';
+
+export const schema = new Schema();
+
+export const POS              = schema.defineColumn(2, Float32Array);
+export const BG_COLOR         = schema.defineColumn(4, Uint8ClampedArray);
+export const FG_COLOR         = schema.defineColumn(4, Uint8ClampedArray);
+export const GLYPH            = schema.defineColumn(1, Uint8Array);
+export const LIFETIME         = schema.defineColumn(1, Uint8Array);
+export const DELAY            = schema.defineColumn(1, Uint8Array);
+export const POINTER_LOCK     = schema.defineColumn(1, Uint8Array);
+export const SIZE             = schema.defineColumn(2, Float32Array);
+export const GLYPH_SIZE       = schema.defineColumn(1, Float32Array);
+export const GLYPH_FAMILY     = schema.defineColumn(1, Uint8Array);
+export const VELOCITY         = schema.defineColumn(2, Float32Array);
+export const STEP_TIMER       = schema.defineColumn(1, Uint8Array);
+export const IS_MOVER         = schema.defineColumn(1, Uint8Array);
+
+export const FULL_MASK = POS | BG_COLOR | FG_COLOR | GLYPH | LIFETIME | DELAY | POINTER_LOCK | SIZE | GLYPH_SIZE | GLYPH_FAMILY;

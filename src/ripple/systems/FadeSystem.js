@@ -1,9 +1,9 @@
-import { BG_COLOR, FG_COLOR, GLYPH, LIFETIME, IS_BALL } from '../storage/components.js';
+import { BG_COLOR, FG_COLOR, GLYPH, LIFETIME, IS_MOVER } from '../storage/components.js';
 
 export class FadeSystem {
     constructor(engine) {
         this.engine = engine;
-        this.view = engine.view([BG_COLOR, FG_COLOR, GLYPH, LIFETIME], [IS_BALL]);
+        this.view = engine.view([BG_COLOR, FG_COLOR, GLYPH, LIFETIME], [IS_MOVER]);
     }
 
     update() {

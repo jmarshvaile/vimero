@@ -1,19 +1,19 @@
 import { Engine } from '../vimero/index.js';
-import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, BALL_TIMER, IS_BALL } from './storage/components.js';
+import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, STEP_TIMER, IS_MOVER } from './storage/components.js';
 import { InputSystem } from './systems/InputSystem.js';
-import { RippleSystem } from './systems/RippleSystem.js';
+import { ProximityStateSystem } from './systems/ProximityStateSystem.js';
 import { RenderSystem } from './systems/RenderSystem.js';
-import { BallSystem } from './systems/BallSystem.js';
+import { GridMovementSystem } from './systems/GridMovementSystem.js';
 import { FadeSystem } from './systems/FadeSystem.js';
 
 const canvas = document.getElementById('stage');
 
 const engine = new Engine(schema);
 const inputSystem = new InputSystem();
-const rippleSystem = new RippleSystem(engine, inputSystem);
+const proximityStateSystem = new ProximityStateSystem(engine, inputSystem);
 const fadeSystem = new FadeSystem(engine);
 const renderSystem = new RenderSystem(engine, canvas);
-const ballSystem = new BallSystem(engine, canvas, rippleSystem);
+const movementSystem = new GridMovementSystem(engine, canvas);
 
 const initialCellSize = 20;
 
@@ -59,26 +59,26 @@ function fillScreen() {
         }
     });
 
-    // Spawn ball entities for stress testing
-    const numBalls = 4;
-    for (let i = 0; i < numBalls; i++) {
+    // Spawn mover entities for stress testing
+    const numMovers = 4;
+    for (let i = 0; i < numMovers; i++) {
         const id = engine.insert();
-        // Include FULL_MASK and the new ball components
-        engine.alter(id, FULL_MASK | VELOCITY | BALL_TIMER | IS_BALL, 0);
+        // Include FULL_MASK and the new components
+        engine.alter(id, FULL_MASK | VELOCITY | STEP_TIMER | IS_MOVER, 0);
     }
     engine.commit();
 
-    // Initialize the balls
-    let ballInitCount = 0;
-    const ballInitView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, BALL_TIMER, IS_BALL]);
-    ballInitView.fetch((count, columns) => {
+    // Initialize the movers
+    let moverInitCount = 0;
+    const moverInitView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, VELOCITY, STEP_TIMER, IS_MOVER]);
+    moverInitView.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
         const size = columns[4], glySize = columns[5], glyFam = columns[6];
-        const vel = columns[7], timer = columns[8], isBall = columns[9];
+        const vel = columns[7], timer = columns[8], isMover = columns[9];
 
         for (let i = 0; i < count; i++) {
-            if (isBall[i] === 0) { // Only initialize the ones we just added which have IS_BALL flag
-                isBall[i] = 1;
+            if (isMover[i] === 0) { // Only initialize the ones we just added which have IS_MOVER flag
+                isMover[i] = 1;
 
                 pos[i * 2] = Math.floor(Math.random() * (canvas.logicalWidth / initialCellSize)) * initialCellSize;
                 pos[i * 2 + 1] = Math.floor(Math.random() * (canvas.logicalHeight / initialCellSize)) * initialCellSize;
@@ -96,17 +96,17 @@ function fillScreen() {
 
                 // Velocity in terms of grid cells
                 let vx, vy;
-                if (ballInitCount < 2) {
+                if (moverInitCount < 2) {
                     vx = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
                     vy = Math.random() > 0.5 ? initialCellSize : -initialCellSize;
-                } else if (ballInitCount === 2) {
+                } else if (moverInitCount === 2) {
                     vx = initialCellSize;
                     vy = 0;
                 } else {
                     vx = 0;
                     vy = initialCellSize;
                 }
-                ballInitCount++;
+                moverInitCount++;
 
                 vel[i * 2] = vx;
                 vel[i * 2 + 1] = vy;
@@ -121,8 +121,8 @@ fillScreen();
 
 function loop() {
     engine.currentTick++;
-    ballSystem.update();
-    rippleSystem.update();
+    movementSystem.update();
+    proximityStateSystem.update();
     fadeSystem.update();
     renderSystem.render();
     requestAnimationFrame(loop);

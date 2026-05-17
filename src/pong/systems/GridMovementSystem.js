@@ -1,21 +1,23 @@
-import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
+import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, SURFACE_DEFLECTION } from '../storage/components.js';
 
-export class MotionCollisionSystem {
+export class GridMovementSystem {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
-        this.view = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, DRAG_OFFSET]);
-        this.gridView = engine.view([POS, VELOCITY, SIZE, ACTIVE, DRAG_OFFSET]);
+        // The mover view includes all components necessary for movement and collision checking
+        this.view = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE]);
+        // The grid view is to check against other elements. It needs the deflection property.
+        this.gridView = engine.view([POS, VELOCITY, SIZE, ACTIVE, SURFACE_DEFLECTION]);
     }
 
     update() {
         this.view.fetch((count, columns) => {
             const pos = columns[0], vel = columns[1], stepTimer = columns[2],
-                  stepDelay = columns[3], size = columns[4], active = columns[5], dragOffset = columns[6];
+                  stepDelay = columns[3], size = columns[4], active = columns[5];
 
             for (let i = 0; i < count; i++) {
-                // Only process cells that are in motion
-                if (vel[i * 2] === 0 && vel[i * 2 + 1] === 0) continue;
+                // Only process cells that are active and in motion
+                if (active[i] === 0 || (vel[i * 2] === 0 && vel[i * 2 + 1] === 0)) continue;
 
                 if (stepTimer[i] > 0) {
                     stepTimer[i]--;
@@ -36,31 +38,22 @@ export class MotionCollisionSystem {
 
                 let bounceX = false;
                 let bounceY = false;
-                let isDestroyed = false;
 
-                // Screen bounds collision
+                // Simple grid boundaries logic
                 if (nextX < 0 || nextX + bw > this.canvas.logicalWidth) {
                     bounceX = true;
                     nextX = currentX;
                 }
 
-                // Despawn on top/bottom bounds
-                if (nextY < 0 || nextY + bh > this.canvas.logicalHeight) {
-                    isDestroyed = true;
-                }
-
-                // Grid collision
-                if (!bounceX && !bounceY && !isDestroyed) {
-                    // We need to iterate over all other cells in the same view to check for collision with static active cells
+                if (!bounceX && !bounceY) {
                     let hitFound = false;
                     this.gridView.fetch((gCount, gColumns) => {
                         if (hitFound) return;
 
-                        const gPos = gColumns[0], gVel = gColumns[1], gSize = gColumns[2], gActive = gColumns[3], gDragOffset = gColumns[4];
+                        const gPos = gColumns[0], gVel = gColumns[1], gSize = gColumns[2], gActive = gColumns[3], gDefl = gColumns[4];
 
                         for (let j = 0; j < gCount; j++) {
-                            // We only collide with active cells that are NOT moving
-                            // Since moving cell has velocity, checking gVel === 0 naturally excludes self
+                            // Only collide with static, active cells
                             if (gActive[j] === 0 || gVel[j * 2] !== 0 || gVel[j * 2 + 1] !== 0) continue;
 
                             const gx = gPos[j * 2];
@@ -71,17 +64,19 @@ export class MotionCollisionSystem {
                             if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
                                 bounceY = true;
                                 bounceX = false;
-                                const hitOffset = gDragOffset[j];
-                                const speed = bw; // we assume bw is the step size which is true for cells
-                                if (hitOffset < 0) {
+                                const hitDeflection = gDefl[j];
+                                const speed = bw; // we assume bw is the step size
+
+                                // Apply the deflection from the surface
+                                if (hitDeflection < 0) {
                                     vel[i * 2] = Math.max(-speed, vx - speed);
-                                } else if (hitOffset > 0) {
+                                } else if (hitDeflection > 0) {
                                     vel[i * 2] = Math.min(speed, vx + speed);
                                 } else {
                                     vel[i * 2] = 0;
                                 }
                                 hitFound = true;
-                                break; // Stop checking after one hit in this page
+                                break;
                             }
                         }
                     });
@@ -96,14 +91,8 @@ export class MotionCollisionSystem {
                     nextY = currentY;
                 }
 
-                if (isDestroyed) {
-                    // Move off-screen to mark for respawn handling
-                    pos[i * 2] = -1000;
-                    pos[i * 2 + 1] = -1000;
-                } else {
-                    pos[i * 2] = nextX;
-                    pos[i * 2 + 1] = nextY;
-                }
+                pos[i * 2] = nextX;
+                pos[i * 2 + 1] = nextY;
             }
         });
     }

@@ -1,1 +1,8 @@
 node_modules/
+# Automated Tests
+tests/
+test-results/
+playwright-report/
+*.spec.js
+*_screenshot.png
+server_output.log
