@@ -117,13 +117,15 @@ function maintainMovingCell() {
 }
 
 function fillScreen() {
+    const logicalWidth = window.innerWidth;
+    const logicalHeight = window.innerHeight;
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
-    canvas.logicalWidth = window.innerWidth;
-    canvas.logicalHeight = window.innerHeight;
+    canvas.width = logicalWidth * dpr;
+    canvas.height = logicalHeight * dpr;
+    canvas.style.width = logicalWidth + 'px';
+    canvas.style.height = logicalHeight + 'px';
+    canvas.logicalWidth = logicalWidth;
+    canvas.logicalHeight = logicalHeight;
 
     const cols = Math.ceil(canvas.logicalWidth / initialCellSize);
     const rows = Math.ceil(canvas.logicalHeight / initialCellSize);
