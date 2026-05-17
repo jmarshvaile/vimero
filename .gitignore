@@ -6,3 +6,4 @@ playwright-report/
 *.spec.js
 *_screenshot.png
 server_output.log
+playwright.config.js
