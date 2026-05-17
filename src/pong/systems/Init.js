@@ -21,7 +21,7 @@ export class Init {
 
             for (let i = 0; i < count; i++) {
                 if (size[i * 2] === 0 && size[i * 2 + 1] === 0) {
-                    const cols = Math.ceil(this.canvas.logicalWidth / cellSize);
+                    const cols = Math.floor(this.canvas.logicalWidth / cellSize);
                     const spawnCol = Math.floor(Math.random() * cols);
 
                     pos[i * 2] = spawnCol * cellSize;
@@ -57,11 +57,11 @@ export class Init {
         this.canvas.height = logicalHeight * dpr;
         this.canvas.style.width = logicalWidth + 'px';
         this.canvas.style.height = logicalHeight + 'px';
-        this.canvas.logicalWidth = logicalWidth;
-        this.canvas.logicalHeight = logicalHeight;
+        this.canvas.logicalWidth = Math.floor(logicalWidth / cellSize) * cellSize;
+        this.canvas.logicalHeight = Math.floor(logicalHeight / cellSize) * cellSize;
 
-        const cols = Math.ceil(this.canvas.logicalWidth / cellSize);
-        const rows = Math.ceil(this.canvas.logicalHeight / cellSize);
+        const cols = Math.floor(this.canvas.logicalWidth / cellSize);
+        const rows = Math.floor(this.canvas.logicalHeight / cellSize);
         const total = cols * rows;
 
         for (let i = 0; i < total; i++) {

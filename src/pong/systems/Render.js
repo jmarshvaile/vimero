@@ -31,7 +31,7 @@ export class Render {
                 const height = size[i * 2 + 1];
 
                 this.ctx.fillStyle = `rgb(${bg[idx]},${bg[idx+1]},${bg[idx+2]})`;
-                this.ctx.fillRect(pos[i * 2], pos[i * 2 + 1], width, height);
+                this.ctx.fillRect(pos[i * 2], pos[i * 2 + 1], width + 1, height + 1);
 
                 const fontFamily = FONT_FAMILIES[glyFam[i]] || 'monospace';
                 this.ctx.font = `bold ${glySize[i]}px ${fontFamily}`;
