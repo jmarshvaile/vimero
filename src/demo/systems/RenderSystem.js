@@ -11,8 +11,11 @@ export class RenderSystem {
     }
 
     render() {
+        const dpr = window.devicePixelRatio || 1;
+        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
         this.ctx.fillStyle = '#000';
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.fillRect(0, 0, this.canvas.logicalWidth, this.canvas.logicalHeight);
         this.ctx.textAlign = 'center'; 
         this.ctx.textBaseline = 'middle';
 

@@ -16,11 +16,11 @@ export class BallSystem {
         let newNextX = nextX;
         let newNextY = nextY;
 
-        if (nextX < 0 || nextX + bw > this.canvas.width) {
+        if (nextX < 0 || nextX + bw > this.canvas.logicalWidth) {
             this._collisionState[0] = 1; // bounceX = true
             newNextX = currentX;
         }
-        if (nextY < 0 || nextY + bh > this.canvas.height) {
+        if (nextY < 0 || nextY + bh > this.canvas.logicalHeight) {
             this._collisionState[1] = 1; // bounceY = true
             newNextY = currentY;
         }
