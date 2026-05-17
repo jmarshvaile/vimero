@@ -19,7 +19,7 @@ const canvas = document.getElementById('stage');
 const engine = new Engine(schema);
 const click = new Click(canvas);
 const activate = new Activate(engine, click);
-const group = new Group(engine);
+const group = new Group(engine, canvas);
 const clock = new Clock(engine);
 const theme = new Theme(engine);
 const movement = new Movement(engine, canvas);
@@ -36,7 +36,7 @@ init.fillScreen(cellSize);
 function loop() {
     engine.currentTick++;
     activate.update();
-    group.update();
+    group.update(cellSize);
     clock.update();
     theme.update();
     movement.update();
