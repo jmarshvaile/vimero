@@ -1,5 +1,5 @@
 import { Engine } from '../vimero/index.js';
-import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID } from './storage/components.js';
+import { schema, FULL_MASK, POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID, DRAG_OFFSET } from './storage/components.js';
 
 import { ClickInputSystem } from './systems/ClickInputSystem.js';
 import { GridActivationSystem } from './systems/GridActivationSystem.js';
@@ -20,7 +20,7 @@ const motionCollisionSystem = new MotionCollisionSystem(engine, canvas);
 const occupancySystem = new OccupancySystem(engine);
 const renderSystem = new RenderSystem(engine, canvas);
 
-const initialCellSize = 16;
+const initialCellSize = 22;
 let lastWidth = window.innerWidth;
 let lastHeight = window.innerHeight;
 
@@ -32,14 +32,14 @@ function spawnBall() {
     engine.alter(id, FULL_MASK, 0);
     engine.commit();
 
-    const ballView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID]);
+    const ballView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID, DRAG_OFFSET]);
 
     ballView.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
         const size = columns[4], glySize = columns[5], glyFam = columns[6];
         const hidden = columns[7], active = columns[8], timer = columns[9];
         const vel = columns[10], stepTimer = columns[11], stepDelay = columns[12];
-        const isBall = columns[13], isGrid = columns[14];
+        const isBall = columns[13], isGrid = columns[14], dragOffset = columns[15];
 
         for (let i = 0; i < count; i++) {
             // Find the newly spawned ball that hasn't been initialized
@@ -60,17 +60,18 @@ function spawnBall() {
                 gly[i] = 79; // 'O'
                 size[i * 2] = initialCellSize;
                 size[i * 2 + 1] = initialCellSize;
-                glySize[i] = initialCellSize * 0.9;
+                glySize[i] = 20;
                 glyFam[i] = 0; // monospace
                 hidden[i] = 0;
                 active[i] = 1; // Always active
                 timer[i] = 0; // Not used for ball
+                dragOffset[i] = 0;
 
                 vel[i * 2] = 0;
                 vel[i * 2 + 1] = initialCellSize; // Move down by one cell
 
-                stepDelay[i] = 60; // 1 second at 60fps
-                stepTimer[i] = 60;
+                stepDelay[i] = 30; // double speed at 60fps
+                stepTimer[i] = 30;
 
                 ballEntityId = id;
             }
@@ -105,7 +106,7 @@ function checkAndRespawnBall() {
                             // This works because we only have 1 ball
                             fv[j * 2] = 0;
                             fv[j * 2 + 1] = initialCellSize;
-                            fst[j] = 60;
+                            fst[j] = 30;
                         }
                     });
                 }
@@ -127,14 +128,14 @@ function fillScreen() {
     }
     engine.commit();
 
-    const initView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, IS_GRID, IS_BALL]);
+    const initView = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, SIZE, GLYPH_SIZE, GLYPH_FAMILY, HIDDEN, ACTIVE, TIMER, IS_GRID, IS_BALL, DRAG_OFFSET]);
     let entityIndex = 0;
 
     initView.fetch((count, columns) => {
         const pos = columns[0], bg = columns[1], fg = columns[2], gly = columns[3];
         const size = columns[4], glySize = columns[5], glyFam = columns[6];
         const hidden = columns[7], active = columns[8], timer = columns[9];
-        const isGrid = columns[10], isBall = columns[11];
+        const isGrid = columns[10], isBall = columns[11], dragOffset = columns[12];
 
         for (let i = 0; i < count; i++) {
             if (isGrid[i] === 1 || isBall[i] === 1) continue; // Already initialized
@@ -150,12 +151,13 @@ function fillScreen() {
             gly[i] = 33 + Math.floor(Math.random() * 93);
             size[i * 2] = initialCellSize;
             size[i * 2 + 1] = initialCellSize;
-            glySize[i] = initialCellSize;
+            glySize[i] = 20;
             glyFam[i] = 0;
 
             hidden[i] = 0;
             active[i] = 0;
             timer[i] = 0;
+            dragOffset[i] = 0;
 
             entityIndex++;
         }

@@ -1,11 +1,11 @@
-import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE, ACTIVE } from '../storage/components.js';
+import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
 
 export class MotionCollisionSystem {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
         this.ballView = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, ACTIVE], [IS_BALL]);
+        this.gridView = engine.view([POS, SIZE, ACTIVE, DRAG_OFFSET], [IS_BALL]);
     }
 
     update() {
@@ -51,7 +51,7 @@ export class MotionCollisionSystem {
                 // Grid collision
                 if (!bounceX && !bounceY && !isDestroyed) {
                     this.gridView.fetch((gCount, gColumns) => {
-                        const gPos = gColumns[0], gSize = gColumns[1], gActive = gColumns[2];
+                        const gPos = gColumns[0], gSize = gColumns[1], gActive = gColumns[2], gDragOffset = gColumns[3];
                         for (let j = 0; j < gCount; j++) {
                             if (gActive[j] === 0) continue;
 
@@ -61,12 +61,16 @@ export class MotionCollisionSystem {
                             const gh = gSize[j * 2 + 1];
 
                             if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
-                                if (currentX + bw <= gx || currentX >= gx + gw) bounceX = true;
-                                if (currentY + bh <= gy || currentY >= gy + gh) bounceY = true;
-
-                                if (!bounceX && !bounceY) {
-                                    bounceX = true;
-                                    bounceY = true;
+                                bounceY = true;
+                                bounceX = false;
+                                const hitOffset = gDragOffset[j];
+                                const speed = bw;
+                                if (hitOffset < 0) {
+                                    bVel[i * 2] = Math.max(-speed, vx - speed);
+                                } else if (hitOffset > 0) {
+                                    bVel[i * 2] = Math.min(speed, vx + speed);
+                                } else {
+                                    bVel[i * 2] = 0;
                                 }
                             }
                         }
