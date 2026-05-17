@@ -1,17 +1,18 @@
-import { POS, HIDDEN, IS_BALL, SIZE } from '../storage/components.js';
+import { POS, HIDDEN, IS_BALL, IS_GRID, SIZE } from '../storage/components.js';
 
 export class OccupancySystem {
     constructor(engine) {
         this.engine = engine;
         this.ballView = engine.view([POS, SIZE, IS_BALL]);
-        this.gridView = engine.view([POS, SIZE, HIDDEN], [IS_BALL]);
+        this.gridView = engine.view([POS, SIZE, HIDDEN, IS_GRID]);
     }
 
     update() {
         // Reset all grid cells to not hidden
         this.gridView.fetch((count, columns) => {
-            const hidden = columns[2];
+            const hidden = columns[2], isGrid = columns[3];
             for (let i = 0; i < count; i++) {
+                if (isGrid[i] === 0) continue;
                 hidden[i] = 0;
             }
         });
@@ -29,9 +30,10 @@ export class OccupancySystem {
                 const bh = bSize[i * 2 + 1];
 
                 this.gridView.fetch((gCount, gColumns) => {
-                    const gPos = gColumns[0], gSize = gColumns[1], gHidden = gColumns[2];
+                    const gPos = gColumns[0], gSize = gColumns[1], gHidden = gColumns[2], gIsGrid = gColumns[3];
 
                     for (let j = 0; j < gCount; j++) {
+                        if (gIsGrid[j] === 0) continue;
                         const gx = gPos[j * 2];
                         const gy = gPos[j * 2 + 1];
                         const gw = gSize[j * 2];

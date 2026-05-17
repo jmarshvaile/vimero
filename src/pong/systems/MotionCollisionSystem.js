@@ -1,11 +1,11 @@
-import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
+import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
 
 export class MotionCollisionSystem {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
         this.ballView = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, ACTIVE, DRAG_OFFSET], [IS_BALL]);
+        this.gridView = engine.view([POS, SIZE, ACTIVE, DRAG_OFFSET, IS_GRID]);
     }
 
     update() {
@@ -51,9 +51,9 @@ export class MotionCollisionSystem {
                 // Grid collision
                 if (!bounceX && !bounceY && !isDestroyed) {
                     this.gridView.fetch((gCount, gColumns) => {
-                        const gPos = gColumns[0], gSize = gColumns[1], gActive = gColumns[2], gDragOffset = gColumns[3];
+                        const gPos = gColumns[0], gSize = gColumns[1], gActive = gColumns[2], gDragOffset = gColumns[3], gIsGrid = gColumns[4];
                         for (let j = 0; j < gCount; j++) {
-                            if (gActive[j] === 0) continue;
+                            if (gIsGrid[j] === 0 || gActive[j] === 0) continue;
 
                             const gx = gPos[j * 2];
                             const gy = gPos[j * 2 + 1];
