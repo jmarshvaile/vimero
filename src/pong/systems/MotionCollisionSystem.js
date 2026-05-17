@@ -1,34 +1,34 @@
-import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, IS_GRID, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
+import { POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, DRAG_OFFSET } from '../storage/components.js';
 
 export class MotionCollisionSystem {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
-        this.ballView = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, IS_BALL, SIZE]);
-        this.gridView = engine.view([POS, SIZE, ACTIVE, DRAG_OFFSET, IS_GRID]);
+        this.view = engine.view([POS, VELOCITY, STEP_TIMER, STEP_DELAY, SIZE, ACTIVE, DRAG_OFFSET]);
     }
 
     update() {
-        this.ballView.fetch((bCount, bColumns) => {
-            const bPos = bColumns[0], bVel = bColumns[1], bStepTimer = bColumns[2],
-                  bStepDelay = bColumns[3], bIsBall = bColumns[4], bSize = bColumns[5];
+        this.view.fetch((count, columns) => {
+            const pos = columns[0], vel = columns[1], stepTimer = columns[2],
+                  stepDelay = columns[3], size = columns[4], active = columns[5], dragOffset = columns[6];
 
-            for (let i = 0; i < bCount; i++) {
-                if (bIsBall[i] === 0) continue;
+            for (let i = 0; i < count; i++) {
+                // Only process cells that are in motion
+                if (vel[i * 2] === 0 && vel[i * 2 + 1] === 0) continue;
 
-                if (bStepTimer[i] > 0) {
-                    bStepTimer[i]--;
+                if (stepTimer[i] > 0) {
+                    stepTimer[i]--;
                     continue;
                 }
 
-                bStepTimer[i] = bStepDelay[i];
+                stepTimer[i] = stepDelay[i];
 
-                const currentX = bPos[i * 2];
-                const currentY = bPos[i * 2 + 1];
-                const vx = bVel[i * 2];
-                const vy = bVel[i * 2 + 1];
-                const bw = bSize[i * 2];
-                const bh = bSize[i * 2 + 1];
+                const currentX = pos[i * 2];
+                const currentY = pos[i * 2 + 1];
+                const vx = vel[i * 2];
+                const vy = vel[i * 2 + 1];
+                const bw = size[i * 2];
+                const bh = size[i * 2 + 1];
 
                 let nextX = currentX + vx;
                 let nextY = currentY + vy;
@@ -50,49 +50,51 @@ export class MotionCollisionSystem {
 
                 // Grid collision
                 if (!bounceX && !bounceY && !isDestroyed) {
-                    this.gridView.fetch((gCount, gColumns) => {
-                        const gPos = gColumns[0], gSize = gColumns[1], gActive = gColumns[2], gDragOffset = gColumns[3], gIsGrid = gColumns[4];
-                        for (let j = 0; j < gCount; j++) {
-                            if (gIsGrid[j] === 0 || gActive[j] === 0) continue;
+                    // We need to iterate over all other cells in the same view to check for collision with static active cells
+                    for (let j = 0; j < count; j++) {
+                        if (i === j) continue; // Skip self
 
-                            const gx = gPos[j * 2];
-                            const gy = gPos[j * 2 + 1];
-                            const gw = gSize[j * 2];
-                            const gh = gSize[j * 2 + 1];
+                        // We only collide with active cells that are NOT moving
+                        if (active[j] === 0 || vel[j * 2] !== 0 || vel[j * 2 + 1] !== 0) continue;
 
-                            if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
-                                bounceY = true;
-                                bounceX = false;
-                                const hitOffset = gDragOffset[j];
-                                const speed = bw;
-                                if (hitOffset < 0) {
-                                    bVel[i * 2] = Math.max(-speed, vx - speed);
-                                } else if (hitOffset > 0) {
-                                    bVel[i * 2] = Math.min(speed, vx + speed);
-                                } else {
-                                    bVel[i * 2] = 0;
-                                }
+                        const gx = pos[j * 2];
+                        const gy = pos[j * 2 + 1];
+                        const gw = size[j * 2];
+                        const gh = size[j * 2 + 1];
+
+                        if (nextX < gx + gw && nextX + bw > gx && nextY < gy + gh && nextY + bh > gy) {
+                            bounceY = true;
+                            bounceX = false;
+                            const hitOffset = dragOffset[j];
+                            const speed = bw; // we assume bw is the step size which is true for cells
+                            if (hitOffset < 0) {
+                                vel[i * 2] = Math.max(-speed, vx - speed);
+                            } else if (hitOffset > 0) {
+                                vel[i * 2] = Math.min(speed, vx + speed);
+                            } else {
+                                vel[i * 2] = 0;
                             }
+                            break; // Stop checking after one hit
                         }
-                    });
+                    }
                 }
 
                 if (bounceX) {
-                    bVel[i * 2] *= -1;
+                    vel[i * 2] *= -1;
                     nextX = currentX;
                 }
                 if (bounceY) {
-                    bVel[i * 2 + 1] *= -1;
+                    vel[i * 2 + 1] *= -1;
                     nextY = currentY;
                 }
 
                 if (isDestroyed) {
-                    // Mark ball to hide or delete, handled elsewhere, but set position off-screen
-                    bPos[i * 2] = -1000;
-                    bPos[i * 2 + 1] = -1000;
+                    // Move off-screen to mark for respawn handling
+                    pos[i * 2] = -1000;
+                    pos[i * 2 + 1] = -1000;
                 } else {
-                    bPos[i * 2] = nextX;
-                    bPos[i * 2 + 1] = nextY;
+                    pos[i * 2] = nextX;
+                    pos[i * 2 + 1] = nextY;
                 }
             }
         });
