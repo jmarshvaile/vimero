@@ -1,6 +1,6 @@
 import { POS, SIZE, ACTIVE, TIMER, VELOCITY } from '../storage/components.js';
 
-export class GridActivationSystem {
+export class Activate {
     constructor(engine, clickInputSystem) {
         this.engine = engine;
         this.clickInputSystem = clickInputSystem;

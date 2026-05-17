@@ -1,4 +1,4 @@
-export class ClickInputSystem {
+export class Click {
     constructor(canvas) {
         this.events = [];
         this.isDragging = false;

@@ -1,10 +1,10 @@
-import { POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, DELAY, POINTER_LOCK, SIZE, IS_MOVER } from '../storage/components.js';
+import { POS, BG, FG, GLYPH, LIFETIME, DELAY, POINTER_LOCK, SIZE, MOVER } from '../storage/components.js';
 
-export class ProximityStateSystem {
+export class Proximity {
     constructor(engine, inputSystem) {
         this.engine = engine;
         this.input = inputSystem;
-        this.view = engine.view([POS, BG_COLOR, FG_COLOR, GLYPH, LIFETIME, DELAY, POINTER_LOCK, SIZE], [IS_MOVER]);
+        this.view = engine.view([POS, BG, FG, GLYPH, LIFETIME, DELAY, POINTER_LOCK, SIZE], [MOVER]);
     }
 
     triggerCircle(ox, oy, sourceWidth, sourceHeight) {

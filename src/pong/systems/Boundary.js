@@ -1,6 +1,6 @@
 import { POS, SIZE, ACTIVE } from '../storage/components.js';
 
-export class BoundaryDespawnSystem {
+export class Boundary {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
