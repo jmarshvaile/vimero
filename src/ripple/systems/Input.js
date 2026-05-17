@@ -1,4 +1,4 @@
-export class InputSystem {
+export class Input {
     constructor() {
         this.mouseX = -1;
         this.mouseY = -1;

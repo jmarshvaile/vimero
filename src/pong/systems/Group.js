@@ -1,16 +1,15 @@
-import { POS, ACTIVE, VELOCITY, SURFACE_DEFLECTION, SIZE } from '../storage/components.js';
+import { POS, ACTIVE, VELOCITY, DEFLECT, SIZE } from '../storage/components.js';
 
-export class ContiguousGroupSystem {
+export class Group {
     constructor(engine) {
         this.engine = engine;
-        this.view = engine.view([POS, ACTIVE, VELOCITY, SURFACE_DEFLECTION, SIZE]);
+        this.view = engine.view([POS, ACTIVE, VELOCITY, DEFLECT, SIZE]);
     }
 
     update() {
         this.view.fetch((count, columns) => {
             const pos = columns[0], active = columns[1], vel = columns[2], defl = columns[3], size = columns[4];
 
-            // First, reset deflection for all non-moving cells
             for (let i = 0; i < count; i++) {
                 if (vel[i * 2] === 0 && vel[i * 2 + 1] === 0) {
                     defl[i] = 0;

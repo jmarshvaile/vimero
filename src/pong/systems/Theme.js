@@ -1,9 +1,9 @@
-import { ACTIVE, BG_COLOR, FG_COLOR } from '../storage/components.js';
+import { ACTIVE, BG, FG } from '../storage/components.js';
 
-export class ThemeColorSystem {
+export class Theme {
     constructor(engine) {
         this.engine = engine;
-        this.view = engine.view([ACTIVE, BG_COLOR, FG_COLOR]);
+        this.view = engine.view([ACTIVE, BG, FG]);
 
         // Solarized Dark Theme Colors
         this.darkBg = [0, 43, 54, 255]; // #002b36

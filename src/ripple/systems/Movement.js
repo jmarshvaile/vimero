@@ -1,33 +1,34 @@
-import { POS, VELOCITY, STEP_TIMER, IS_MOVER, SIZE, LIFETIME, DELAY } from '../storage/components.js';
+import { POS, VELOCITY, TIMER, MOVER, SIZE, LIFETIME, DELAY } from '../storage/components.js';
 
-export class GridMovementSystem {
+export class Movement {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
-        this.moverView = engine.view([POS, VELOCITY, STEP_TIMER, IS_MOVER, SIZE]);
-        this.gridView = engine.view([POS, SIZE, LIFETIME, DELAY], [IS_MOVER]);
+        this.moverView = engine.view([POS, VELOCITY, TIMER, MOVER, SIZE]);
+        this.gridView = engine.view([POS, SIZE, LIFETIME, DELAY], [MOVER]);
 
-        // Single TypedArray to hold [bounceX, bounceY] to avoid GC allocations in the hot path
-        this._collisionState = new Uint8Array(2);
+        // Float32Array to hold [nextX, nextY, bounceX, bounceY] to avoid GC allocations
+        this._state = new Float32Array(4);
     }
 
-    _checkWallCollision(nextX, nextY, currentX, currentY, bw, bh) {
-        let newNextX = nextX;
-        let newNextY = nextY;
+    _checkWallCollision(currentX, currentY, bw, bh) {
+        let nextX = this._state[0];
+        let nextY = this._state[1];
 
         if (nextX < 0 || nextX + bw > this.canvas.logicalWidth) {
-            this._collisionState[0] = 1; // bounceX = true
-            newNextX = currentX;
+            this._state[2] = 1; // bounceX = true
+            this._state[0] = currentX;
         }
         if (nextY < 0 || nextY + bh > this.canvas.logicalHeight) {
-            this._collisionState[1] = 1; // bounceY = true
-            newNextY = currentY;
+            this._state[3] = 1; // bounceY = true
+            this._state[1] = currentY;
         }
-
-        return { nextX: newNextX, nextY: newNextY };
     }
 
-    _checkGridCollision(nextX, nextY, currentX, currentY, bw, bh) {
+    _checkGridCollision(currentX, currentY, bw, bh) {
+        let nextX = this._state[0];
+        let nextY = this._state[1];
+
         this.gridView.fetch((gCount, gColumns) => {
             const gPos = gColumns[0], gSize = gColumns[1], gLifetime = gColumns[2], gDelay = gColumns[3];
             for (let j = 0; j < gCount; j++) {
@@ -44,12 +45,12 @@ export class GridMovementSystem {
                     nextY < gy + gh &&
                     nextY + bh > gy) {
 
-                    if (currentX + bw <= gx || currentX >= gx + gw) this._collisionState[0] = 1; // bounceX = true
-                    if (currentY + bh <= gy || currentY >= gy + gh) this._collisionState[1] = 1; // bounceY = true
+                    if (currentX + bw <= gx || currentX >= gx + gw) this._state[2] = 1; // bounceX = true
+                    if (currentY + bh <= gy || currentY >= gy + gh) this._state[3] = 1; // bounceY = true
 
-                    if (this._collisionState[0] === 0 && this._collisionState[1] === 0) {
-                        this._collisionState[0] = 1;
-                        this._collisionState[1] = 1;
+                    if (this._state[2] === 0 && this._state[3] === 0) {
+                        this._state[2] = 1;
+                        this._state[3] = 1;
                     }
                 }
             }
@@ -60,33 +61,30 @@ export class GridMovementSystem {
         const bw = bSize[i * 2];
         const bh = bSize[i * 2 + 1];
 
-        let nextX = currentX + vx;
-        let nextY = currentY + vy;
-
-        this._collisionState[0] = 0;
-        this._collisionState[1] = 0;
+        this._state[0] = currentX + vx;
+        this._state[1] = currentY + vy;
+        this._state[2] = 0; // bounceX
+        this._state[3] = 0; // bounceY
 
         // Check walls
-        const wallState = this._checkWallCollision(nextX, nextY, currentX, currentY, bw, bh);
-        nextX = wallState.nextX;
-        nextY = wallState.nextY;
+        this._checkWallCollision(currentX, currentY, bw, bh);
 
         // Check grid if not bouncing yet
-        if (this._collisionState[0] === 0 || this._collisionState[1] === 0) {
-            this._checkGridCollision(nextX, nextY, currentX, currentY, bw, bh);
+        if (this._state[2] === 0 || this._state[3] === 0) {
+            this._checkGridCollision(currentX, currentY, bw, bh);
         }
 
-        if (this._collisionState[0] === 1) {
+        if (this._state[2] === 1) {
             bVel[i * 2] *= -1;
-            nextX = currentX;
+            this._state[0] = currentX;
         }
-        if (this._collisionState[1] === 1) {
+        if (this._state[3] === 1) {
             bVel[i * 2 + 1] *= -1;
-            nextY = currentY;
+            this._state[1] = currentY;
         }
 
-        bPos[i * 2] = nextX;
-        bPos[i * 2 + 1] = nextY;
+        bPos[i * 2] = this._state[0];
+        bPos[i * 2 + 1] = this._state[1];
     }
 
     update() {

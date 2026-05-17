@@ -1,6 +1,6 @@
 import { ACTIVE, TIMER, VELOCITY } from '../storage/components.js';
 
-export class TimerStateSystem {
+export class Clock {
     constructor(engine) {
         this.engine = engine;
         this.view = engine.view([ACTIVE, TIMER, VELOCITY]);
