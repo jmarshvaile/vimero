@@ -17,5 +17,6 @@ export const STEP_TIMER   = schema.defineColumn(1, Uint32Array);
 export const STEP_DELAY   = schema.defineColumn(1, Uint32Array);
 export const IS_BALL      = schema.defineColumn(1, Uint8Array);
 export const IS_GRID      = schema.defineColumn(1, Uint8Array);
+export const DRAG_OFFSET  = schema.defineColumn(1, Int8Array);
 
-export const FULL_MASK = POS | SIZE | BG_COLOR | FG_COLOR | GLYPH | GLYPH_SIZE | GLYPH_FAMILY | HIDDEN | ACTIVE | TIMER | VELOCITY | STEP_TIMER | STEP_DELAY | IS_BALL | IS_GRID;
+export const FULL_MASK = POS | SIZE | BG_COLOR | FG_COLOR | GLYPH | GLYPH_SIZE | GLYPH_FAMILY | HIDDEN | ACTIVE | TIMER | VELOCITY | STEP_TIMER | STEP_DELAY | IS_BALL | IS_GRID | DRAG_OFFSET;
