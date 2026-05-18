@@ -15,3 +15,4 @@ export const TIMER              = schema.defineColumn(1, Uint32Array);
 export const VELOCITY           = schema.defineColumn(2, Float32Array);
 export const DELAY              = schema.defineColumn(1, Uint32Array);
 export const DEFLECT            = schema.defineColumn(1, Int8Array);
+export const POINTER            = schema.defineColumn(1, Uint8Array);

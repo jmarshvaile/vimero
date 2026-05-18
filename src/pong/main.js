@@ -17,8 +17,8 @@ import { Maintainer } from './systems/Maintainer.js';
 const canvas = document.getElementById('stage');
 
 const engine = new Engine(schema);
-const click = new Click(canvas);
-const activate = new Activate(engine, click);
+const click = new Click(engine, canvas);
+const activate = new Activate(engine);
 const group = new Group(engine, canvas);
 const clock = new Clock(engine);
 const theme = new Theme(engine);

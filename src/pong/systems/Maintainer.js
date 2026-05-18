@@ -8,14 +8,11 @@ export class Maintainer {
     }
 
     update(cellSize) {
-        let needsRespawn = false;
-
         this.view.fetch((count, columns) => {
             const pos = columns[0], vel = columns[1], active = columns[2];
             for (let i = 0; i < count; i++) {
                 if (active[i] === 1 && (vel[i * 2] !== 0 || vel[i * 2 + 1] !== 0)) {
                     if (pos[i * 2] === -1000 && pos[i * 2 + 1] === -1000) {
-                        needsRespawn = true;
                         pos[i * 2] = Math.floor(Math.random() * Math.ceil(this.canvas.logicalWidth / cellSize)) * cellSize;
                         pos[i * 2 + 1] = 0;
 
