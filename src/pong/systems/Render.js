@@ -11,8 +11,8 @@ export class Render {
     }
 
     render() {
-        const dpr = window.devicePixelRatio || 1;
-        this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        const actualDpr = this.canvas.width / this.canvas.logicalWidth;
+        this.ctx.setTransform(actualDpr, 0, 0, actualDpr, 0, 0);
 
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.logicalWidth, this.canvas.logicalHeight);
@@ -31,11 +31,7 @@ export class Render {
                 const height = size[i * 2 + 1];
 
                 this.ctx.fillStyle = `rgb(${bg[idx]},${bg[idx+1]},${bg[idx+2]})`;
-                const px = Math.round(pos[i * 2] * dpr) / dpr;
-                const py = Math.round(pos[i * 2 + 1] * dpr) / dpr;
-                const pw = Math.round((pos[i * 2] + width) * dpr) / dpr - px;
-                const ph = Math.round((pos[i * 2 + 1] + height) * dpr) / dpr - py;
-                this.ctx.fillRect(px, py, pw, ph);
+                this.ctx.fillRect(pos[i * 2], pos[i * 2 + 1], width, height);
 
                 const fontFamily = FONT_FAMILIES[glyFam[i]] || 'monospace';
                 this.ctx.font = `bold ${glySize[i]}px ${fontFamily}`;

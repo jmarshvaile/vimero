@@ -50,15 +50,19 @@ export class Init {
     }
 
     fillScreen(cellSize) {
-        const logicalWidth = window.innerWidth;
-        const logicalHeight = window.innerHeight;
         const dpr = window.devicePixelRatio || 1;
-        this.canvas.width = logicalWidth * dpr;
-        this.canvas.height = logicalHeight * dpr;
+        const physicalCellSize = Math.round(cellSize * dpr);
+        const actualDpr = physicalCellSize / cellSize;
+
+        const logicalWidth = Math.floor(window.innerWidth / cellSize) * cellSize;
+        const logicalHeight = Math.floor(window.innerHeight / cellSize) * cellSize;
+
+        this.canvas.width = logicalWidth * actualDpr;
+        this.canvas.height = logicalHeight * actualDpr;
         this.canvas.style.width = logicalWidth + 'px';
         this.canvas.style.height = logicalHeight + 'px';
-        this.canvas.logicalWidth = Math.floor(logicalWidth / cellSize) * cellSize;
-        this.canvas.logicalHeight = Math.floor(logicalHeight / cellSize) * cellSize;
+        this.canvas.logicalWidth = logicalWidth;
+        this.canvas.logicalHeight = logicalHeight;
 
         const cols = Math.floor(this.canvas.logicalWidth / cellSize);
         const rows = Math.floor(this.canvas.logicalHeight / cellSize);
