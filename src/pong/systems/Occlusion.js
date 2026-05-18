@@ -1,6 +1,6 @@
 import { POS, HIDDEN, SIZE, VELOCITY } from '../storage/components.js';
 
-export class Occupancy {
+export class Occlusion {
     constructor(engine) {
         this.engine = engine;
         this.staticView = engine.view([POS, SIZE, HIDDEN, VELOCITY]);

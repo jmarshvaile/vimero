@@ -1,9 +1,9 @@
-import { POS, SIZE, ACTIVE, TIMER, VELOCITY, POINTER } from '../storage/components.js';
+import { POS, SIZE, ACTIVE, LIFETIME, VELOCITY, POINTER } from '../storage/components.js';
 
 export class Activate {
     constructor(engine) {
         this.engine = engine;
-        this.view = engine.view([POS, SIZE, ACTIVE, TIMER, VELOCITY], [POINTER]);
+        this.view = engine.view([POS, SIZE, ACTIVE, LIFETIME, VELOCITY], [POINTER]);
         this.pointerView = engine.view([POS, ACTIVE, POINTER]);
     }
 
@@ -24,7 +24,7 @@ export class Activate {
         if (pointerActive === 0) return;
 
         this.view.fetch((count, columns) => {
-            const pos = columns[0], size = columns[1], active = columns[2], timer = columns[3], vel = columns[4];
+            const pos = columns[0], size = columns[1], active = columns[2], lifetime = columns[3], vel = columns[4];
 
             for (let i = 0; i < count; i++) {
                 // Skip cells that are moving
@@ -37,7 +37,7 @@ export class Activate {
 
                 if (pointerX >= x && pointerX < x + w && pointerY >= y && pointerY < y + h) {
                     active[i] = 1;
-                    timer[i] = 120; // 2 seconds at 60 fps
+                    lifetime[i] = 120; // 2 seconds at 60 fps
                 }
             }
         });
