@@ -1,13 +1,13 @@
 export class Resize {
     constructor() {
-        this.lastWidth = window.innerWidth;
-        this.lastHeight = window.innerHeight;
+        this.lastWidth = document.body.clientWidth;
+        this.lastHeight = document.body.clientHeight;
     }
 
     update() {
-        if (window.innerWidth !== this.lastWidth || window.innerHeight !== this.lastHeight) {
-            this.lastWidth = window.innerWidth;
-            this.lastHeight = window.innerHeight;
+        if (document.body.clientWidth !== this.lastWidth || document.body.clientHeight !== this.lastHeight) {
+            this.lastWidth = document.body.clientWidth;
+            this.lastHeight = document.body.clientHeight;
             location.reload();
         }
     }

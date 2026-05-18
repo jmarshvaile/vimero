@@ -54,8 +54,10 @@ export class Init {
         const physicalCellSize = Math.round(cellSize * dpr);
         const actualDpr = physicalCellSize / cellSize;
 
-        const logicalWidth = Math.floor(window.innerWidth / cellSize) * cellSize;
-        const logicalHeight = Math.floor(window.innerHeight / cellSize) * cellSize;
+        // document.body.clientWidth / clientHeight accurately reflect the actual layout space
+        // without including potential scrollbars or mobile viewport zoom quirks like innerWidth.
+        const logicalWidth = Math.floor(document.body.clientWidth / cellSize) * cellSize;
+        const logicalHeight = Math.floor(document.body.clientHeight / cellSize) * cellSize;
 
         this.canvas.width = logicalWidth * actualDpr;
         this.canvas.height = logicalHeight * actualDpr;
