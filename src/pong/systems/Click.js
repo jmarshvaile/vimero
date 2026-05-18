@@ -1,25 +1,49 @@
+import { POS, ACTIVE, POINTER } from '../storage/components.js';
+
 export class Click {
-    constructor(canvas) {
-        this.events = [];
-        this.isDragging = false;
-        this.startX = -1;
-        this.startY = -1;
+    constructor(engine, canvas) {
+        this.engine = engine;
+
+        // Create the singleton pointer entity
+        const id = engine.insert();
+        engine.alter(id, POS | ACTIVE | POINTER, 0);
+        engine.commit();
+
+        this.view = engine.view([POS, ACTIVE, POINTER]);
+
+        const updatePointer = (x, y, isActive) => {
+            this.view.fetch((count, columns) => {
+                const pos = columns[0], active = columns[1];
+                for (let i = 0; i < count; i++) {
+                    pos[i * 2] = x;
+                    pos[i * 2 + 1] = y;
+                    active[i] = isActive ? 1 : 0;
+                }
+            });
+        };
 
         const handleStart = (x, y) => {
-            this.isDragging = true;
-            this.startX = x;
-            this.startY = y;
-            this.events.push({ x, y, startX: this.startX, startY: this.startY });
+            updatePointer(x, y, true);
         };
 
         const handleMove = (x, y) => {
-            if (this.isDragging) {
-                this.events.push({ x, y, startX: this.startX, startY: this.startY });
-            }
+            this.view.fetch((count, columns) => {
+                const active = columns[1];
+                for (let i = 0; i < count; i++) {
+                    if (active[i] === 1) {
+                        updatePointer(x, y, true);
+                    }
+                }
+            });
         };
 
         const handleEnd = () => {
-            this.isDragging = false;
+            this.view.fetch((count, columns) => {
+                const active = columns[1];
+                for (let i = 0; i < count; i++) {
+                    active[i] = 0;
+                }
+            });
         };
 
         // Mouse events
@@ -43,12 +67,5 @@ export class Click {
 
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('touchcancel', handleEnd);
-    }
-
-    consume() {
-        if (this.events.length === 0) return [];
-        const currentEvents = [...this.events];
-        this.events = [];
-        return currentEvents;
     }
 }
