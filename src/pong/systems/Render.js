@@ -1,4 +1,4 @@
-import { POS, BG, FG, GLYPH, SIZE, TEXT, FONT, HIDDEN } from '../storage/components.js';
+import { POS, BG, FG, GLYPH, SIZE, FONT_SIZE, FONT_FAMILY, HIDDEN } from '../storage/components.js';
 
 const FONT_FAMILIES = ['monospace', 'sans-serif', 'serif', 'cursive', 'fantasy'];
 
@@ -7,7 +7,7 @@ export class Render {
         this.engine = engine;
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d', { alpha: false });
-        this.view = engine.view([POS, BG, FG, GLYPH, SIZE, TEXT, FONT, HIDDEN]);
+        this.view = engine.view([POS, BG, FG, GLYPH, SIZE, FONT_SIZE, FONT_FAMILY, HIDDEN]);
     }
 
     render() {

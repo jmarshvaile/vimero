@@ -1,37 +1,37 @@
-import { POS, ACTIVE, VELOCITY, DEFLECT, SIZE, TIMER } from '../storage/components.js';
+import { POS, ACTIVE, VELOCITY, DEFLECT, SIZE, LIFETIME } from '../storage/components.js';
 
-export class Group {
+export class Deflection {
     constructor(engine, canvas) {
         this.engine = engine;
         this.canvas = canvas;
-        this.view = engine.view([POS, ACTIVE, VELOCITY, DEFLECT, SIZE, TIMER]);
+        this.view = engine.view([POS, ACTIVE, VELOCITY, DEFLECT, SIZE, LIFETIME]);
 
         this.gridActive = new Float32Array(100000);
-        this.gridTimer = new Float32Array(100000);
+        this.gridLifetime = new Float32Array(100000);
     }
 
-    update(cellSize) {
-        const cols = Math.floor(this.canvas.logicalWidth / cellSize);
-        const rows = Math.floor(this.canvas.logicalHeight / cellSize);
+    update(cellWidth, cellHeight) {
+        const cols = Math.floor(this.canvas.logicalWidth / cellWidth);
+        const rows = Math.floor(this.canvas.logicalHeight / cellHeight);
         const totalCells = cols * rows;
 
         for (let i = 0; i < totalCells; i++) {
             this.gridActive[i] = 0;
-            this.gridTimer[i] = 0;
+            this.gridLifetime[i] = 0;
         }
 
         // Pass 1: populate grid
         this.view.fetch((count, columns) => {
-            const pos = columns[0], active = columns[1], vel = columns[2], timer = columns[5];
+            const pos = columns[0], active = columns[1], vel = columns[2], lifetime = columns[5];
             for (let i = 0; i < count; i++) {
                 if (vel[i * 2] === 0 && vel[i * 2 + 1] === 0) {
                     if (active[i] === 1) {
-                        const col = Math.floor(pos[i * 2] / cellSize);
-                        const row = Math.floor(pos[i * 2 + 1] / cellSize);
+                        const col = Math.floor(pos[i * 2] / cellWidth);
+                        const row = Math.floor(pos[i * 2 + 1] / cellHeight);
                         if (col >= 0 && col < cols && row >= 0 && row < rows) {
                             const idx = row * cols + col;
                             this.gridActive[idx] = 1;
-                            this.gridTimer[idx] = timer[i];
+                            this.gridLifetime[idx] = lifetime[i];
                         }
                     }
                 }
@@ -40,7 +40,7 @@ export class Group {
 
         // Pass 2: calculate deflection
         this.view.fetch((count, columns) => {
-            const pos = columns[0], active = columns[1], vel = columns[2], defl = columns[3], timer = columns[5];
+            const pos = columns[0], active = columns[1], vel = columns[2], defl = columns[3], lifetime = columns[5];
 
             for (let i = 0; i < count; i++) {
                 if (vel[i * 2] === 0 && vel[i * 2 + 1] === 0) {
@@ -49,8 +49,8 @@ export class Group {
                         continue;
                     }
 
-                    const col = Math.floor(pos[i * 2] / cellSize);
-                    const row = Math.floor(pos[i * 2 + 1] / cellSize);
+                    const col = Math.floor(pos[i * 2] / cellWidth);
+                    const row = Math.floor(pos[i * 2 + 1] / cellHeight);
 
                     if (col < 0 || col >= cols || row < 0 || row >= rows) {
                         defl[i] = 0;
@@ -58,7 +58,7 @@ export class Group {
                     }
 
                     const idx = row * cols + col;
-                    const myTimer = this.gridTimer[idx];
+                    const myTimer = this.gridLifetime[idx];
 
                     // Check horizontal neighbors
                     const leftIdx = row * cols + (col - 1);
@@ -68,8 +68,8 @@ export class Group {
                     const rightActive = (col < cols - 1 && this.gridActive[rightIdx] === 1) ? 1 : 0;
 
                     if (leftActive || rightActive) {
-                        const leftTimer = leftActive ? this.gridTimer[leftIdx] : -1;
-                        const rightTimer = rightActive ? this.gridTimer[rightIdx] : -1;
+                        const leftTimer = leftActive ? this.gridLifetime[leftIdx] : -1;
+                        const rightTimer = rightActive ? this.gridLifetime[rightIdx] : -1;
 
                         if ((!leftActive || myTimer <= leftTimer) && (!rightActive || myTimer <= rightTimer)) {
                             // I am oldest
@@ -78,7 +78,7 @@ export class Group {
                             // Younger than at least one neighbor, deflect opposite to older neighbor
                             if (leftActive && rightActive) {
                                 if (leftTimer < rightTimer) {
-                                    defl[i] = 1; // Left is older (smaller timer = older since timer decreases)
+                                    defl[i] = 1; // Left is older (smaller lifetime = older since lifetime decreases)
                                 } else {
                                     defl[i] = -1; // Right is older
                                 }
@@ -109,20 +109,20 @@ export class Group {
                         let youngestSide = 0;
 
                         if (tlActive) {
-                            if (this.gridTimer[tlIdx] < minTimer) { minTimer = this.gridTimer[tlIdx]; oldestSide = 1; }
-                            if (this.gridTimer[tlIdx] > maxTimer) { maxTimer = this.gridTimer[tlIdx]; youngestSide = -1; }
+                            if (this.gridLifetime[tlIdx] < minTimer) { minTimer = this.gridLifetime[tlIdx]; oldestSide = 1; }
+                            if (this.gridLifetime[tlIdx] > maxTimer) { maxTimer = this.gridLifetime[tlIdx]; youngestSide = -1; }
                         }
                         if (blActive) {
-                            if (this.gridTimer[blIdx] < minTimer) { minTimer = this.gridTimer[blIdx]; oldestSide = 1; }
-                            if (this.gridTimer[blIdx] > maxTimer) { maxTimer = this.gridTimer[blIdx]; youngestSide = -1; }
+                            if (this.gridLifetime[blIdx] < minTimer) { minTimer = this.gridLifetime[blIdx]; oldestSide = 1; }
+                            if (this.gridLifetime[blIdx] > maxTimer) { maxTimer = this.gridLifetime[blIdx]; youngestSide = -1; }
                         }
                         if (trActive) {
-                            if (this.gridTimer[trIdx] < minTimer) { minTimer = this.gridTimer[trIdx]; oldestSide = -1; }
-                            if (this.gridTimer[trIdx] > maxTimer) { maxTimer = this.gridTimer[trIdx]; youngestSide = 1; }
+                            if (this.gridLifetime[trIdx] < minTimer) { minTimer = this.gridLifetime[trIdx]; oldestSide = -1; }
+                            if (this.gridLifetime[trIdx] > maxTimer) { maxTimer = this.gridLifetime[trIdx]; youngestSide = 1; }
                         }
                         if (brActive) {
-                            if (this.gridTimer[brIdx] < minTimer) { minTimer = this.gridTimer[brIdx]; oldestSide = -1; }
-                            if (this.gridTimer[brIdx] > maxTimer) { maxTimer = this.gridTimer[brIdx]; youngestSide = 1; }
+                            if (this.gridLifetime[brIdx] < minTimer) { minTimer = this.gridLifetime[brIdx]; oldestSide = -1; }
+                            if (this.gridLifetime[brIdx] > maxTimer) { maxTimer = this.gridLifetime[brIdx]; youngestSide = 1; }
                         }
 
                         if (maxTimer > myTimer) {
