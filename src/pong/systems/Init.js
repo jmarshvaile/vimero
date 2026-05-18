@@ -55,15 +55,17 @@ export class Init {
     fillScreen(cellWidth, cellHeight) {
         const dpr = window.devicePixelRatio || 1;
         const physicalCellWidth = Math.round(cellWidth * dpr);
-        const actualDpr = physicalCellWidth / cellWidth;
+        const actualDprX = physicalCellWidth / cellWidth;
+        const physicalCellHeight = Math.round(cellHeight * dpr);
+        const actualDprY = physicalCellHeight / cellHeight;
 
         // document.body.clientWidth / clientHeight accurately reflect the actual layout space
         // without including potential scrollbars or mobile viewport zoom quirks like innerWidth.
         const logicalWidth = Math.floor(document.body.clientWidth / cellWidth) * cellWidth;
         const logicalHeight = Math.floor(document.body.clientHeight / cellHeight) * cellHeight;
 
-        this.canvas.width = logicalWidth * actualDpr;
-        this.canvas.height = logicalHeight * actualDpr;
+        this.canvas.width = logicalWidth * actualDprX;
+        this.canvas.height = logicalHeight * actualDprY;
         this.canvas.style.width = logicalWidth + 'px';
         this.canvas.style.height = logicalHeight + 'px';
         this.canvas.logicalWidth = logicalWidth;
