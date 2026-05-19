@@ -11,8 +11,9 @@ export class Render {
     }
 
     render() {
-        const actualDpr = this.canvas.width / this.canvas.logicalWidth;
-        this.ctx.setTransform(actualDpr, 0, 0, actualDpr, 0, 0);
+        const actualDprX = this.canvas.width / this.canvas.logicalWidth;
+        const actualDprY = this.canvas.height / this.canvas.logicalHeight;
+        this.ctx.setTransform(actualDprX, 0, 0, actualDprY, 0, 0);
 
         this.ctx.fillStyle = '#000';
         this.ctx.fillRect(0, 0, this.canvas.logicalWidth, this.canvas.logicalHeight);
