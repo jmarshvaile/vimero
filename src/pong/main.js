@@ -36,9 +36,10 @@ const render = new Render(engine, canvas);
 const resize = new Resize();
 const init = new Init(engine, canvas);
 
-const cellWidth = 15;
-const cellHeight = 27;
-init.fillScreen(cellWidth, cellHeight);
+const fontSize = 20;
+const cellWidth = Math.ceil(fontSize * 0.75);
+const cellHeight = Math.ceil(fontSize * 1.4);
+init.fillScreen(cellWidth, cellHeight, fontSize);
 
 function loop() {
     engine.currentTick++;

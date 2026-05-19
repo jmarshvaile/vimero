@@ -6,7 +6,7 @@ export class Init {
         this.canvas = canvas;
     }
 
-    spawnMovingCell(cellWidth, cellHeight) {
+    spawnMovingCell(cellWidth, cellHeight, fontSize) {
         const id = this.engine.insert();
         this.engine.alter(id, POS | BG | FG | GLYPH | SIZE | FONT_SIZE | FONT_FAMILY | HIDDEN | ACTIVE | LIFETIME | VELOCITY | COOLDOWN | COOLDOWN_TIMER | CAN_MOVE | DEFLECT, 0);
         this.engine.commit();
@@ -33,7 +33,7 @@ export class Init {
                     gly[i] = 79;
                     size[i * 2] = cellWidth;
                     size[i * 2 + 1] = cellHeight;
-                    glySize[i] = 20;
+                    glySize[i] = fontSize;
                     glyFam[i] = 0;
                     hidden[i] = 0;
                     active[i] = 1;
@@ -52,7 +52,7 @@ export class Init {
         });
     }
 
-    fillScreen(cellWidth, cellHeight) {
+    fillScreen(cellWidth, cellHeight, fontSize) {
         const dpr = window.devicePixelRatio || 1;
         const physicalCellWidth = Math.round(cellWidth * dpr);
         const actualDprX = physicalCellWidth / cellWidth;
@@ -102,7 +102,7 @@ export class Init {
                 gly[i] = 33 + Math.floor(Math.random() * 93);
                 size[i * 2] = cellWidth;
                     size[i * 2 + 1] = cellHeight;
-                glySize[i] = 20;
+                glySize[i] = fontSize;
                 glyFam[i] = 0;
 
                 hidden[i] = 0;
@@ -118,6 +118,6 @@ export class Init {
             }
         });
 
-        this.spawnMovingCell(cellWidth, cellHeight);
+        this.spawnMovingCell(cellWidth, cellHeight, fontSize);
     }
 }
