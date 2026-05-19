@@ -33,7 +33,7 @@ export class Init {
                     gly[i] = 79;
                     size[i * 2] = cellWidth;
                     size[i * 2 + 1] = cellHeight;
-                    glySize[i] = 16;
+                    glySize[i] = 20;
                     glyFam[i] = 0;
                     hidden[i] = 0;
                     active[i] = 1;
@@ -102,7 +102,7 @@ export class Init {
                 gly[i] = 33 + Math.floor(Math.random() * 93);
                 size[i * 2] = cellWidth;
                     size[i * 2 + 1] = cellHeight;
-                glySize[i] = 16;
+                glySize[i] = 20;
                 glyFam[i] = 0;
 
                 hidden[i] = 0;
