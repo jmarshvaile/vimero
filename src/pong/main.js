@@ -36,8 +36,8 @@ const render = new Render(engine, canvas);
 const resize = new Resize();
 const init = new Init(engine, canvas);
 
-const cellWidth = 10;
-const cellHeight = 20;
+const cellWidth = 15;
+const cellHeight = 27;
 init.fillScreen(cellWidth, cellHeight);
 
 function loop() {
